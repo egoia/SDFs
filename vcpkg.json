@@ -1,0 +1,15 @@
+{
+  "name": "my-opengl-project",
+  "version-string": "0.1.0",
+  "dependencies": [
+    {
+      "name": "sdl2",
+      "features": ["x11", "wayland"]
+    },
+    "glad",
+    "glm",
+    "assimp",
+    "stb",
+    "imgui"
+  ]
+}

@@ -1,0 +1,7 @@
+/build/*
+/.vscode/*
+/.vscode
+/vcpkg_installed/*
+/vcpkg_installed
+/vcpkg/*
+/vcpkg
