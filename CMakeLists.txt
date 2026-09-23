@@ -4,6 +4,11 @@ project(SDFs LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(PkgConfig REQUIRED)
+
+# Vérifie la présence des bibliothèques critiques avant de lancer vcpkg
+pkg_check_modules(SYSTEM_DEPS REQUIRED x11 wayland-client egl)
+
 # Dépendances vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)

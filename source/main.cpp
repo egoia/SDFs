@@ -1,8 +1,21 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
+#include <vector>
+#include <glm/glm.hpp>
+
+#define WIDTH 1280
+#define HEIGHT 720
+
+int on_resize_window_callback(void* userdata, SDL_Event* event){
+    if(event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_RESIZED){
+            glViewport(0, 0, event->window.data1, event->window.data2);
+    }
+    return 0;
+};
 
 int main(int argc, char* argv[]) {
+    //init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "Erreur SDL_Init: " << SDL_GetError() << '\n';
         return -1;
@@ -13,11 +26,12 @@ int main(int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
+    //Create window
     SDL_Window* window = SDL_CreateWindow(
         "OpenGL Window (Ubuntu / Make)",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1280, 720,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
+        WIDTH, HEIGHT,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
     );
 
     if (!window) {
@@ -25,7 +39,9 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return -1;
     }
+    SDL_AddEventWatch(on_resize_window_callback, NULL);
 
+    //Context OpenGL
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
     if (!glContext) {
         std::cerr << "Erreur SDL_GL_CreateContext: " << SDL_GetError() << '\n';
@@ -34,6 +50,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    //Load glad
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cerr << "Erreur initialisation Glad\n";
         SDL_GL_DeleteContext(glContext);
@@ -42,8 +59,31 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::cout << "OpenGL Version : " << glGetString(GL_VERSION) << '\n';
-    std::cout << "Carte graphique : " << glGetString(GL_RENDERER) << '\n';
+    // configure pipeline
+    // choisir dans quelle image dessiner, celle qui n'est pas affichée, GL_BACK
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glDrawBuffer(GL_BACK);
+
+    glViewport(0, 0, WIDTH, HEIGHT);
+
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClearDepthf(1.0f);
+
+    //Pas besoin de Zbuffer et ztest
+    //Pas besoin de culling
+
+    //transparence (pas nécessaire si discard dans le shader)
+    /*glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+
+
+    //VAO
+    GLuint vao = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    //Camera
+    glm::vec3 camera_center = glm::vec3(0.0f);
 
     bool running = true;
     SDL_Event event;
@@ -54,12 +94,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        glClearColor(1.0f, 0.15f, 0.18f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);   // effacer l'image
+        glClear(GL_DEPTH_BUFFER_BIT);   // effacer le zbuffer, si nécessaire
 
         SDL_GL_SwapWindow(window);
     }
 
+    SDL_DelEventWatch(on_resize_window_callback, NULL);
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);
     SDL_Quit();
