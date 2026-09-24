@@ -1,8 +1,11 @@
+#pragma once
 #include <iostream>
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include "orbit_camera.hpp"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -77,13 +80,28 @@ int main(int argc, char* argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
 
+    //Camera
+    GLfloat camera_target_dist = 3.0f;
+    glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
+    orbit_camera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT);
+
     //VAO
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    //Camera
-    glm::vec3 camera_center = glm::vec3(0.0f);
+    const float quadVertices[] = {
+        -1.0f, 1.0f,
+        -1.0f, -1.0f, 
+        1.0f, 1.0f, 
+        1.0f, -1.0f
+    };
+
+    GLuint vbo = 0;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexAttribPointer(0, 2,  GL_FLOAT, GL_FALSE, 0,0);
+    glEnableVertexAttribArray(0);
 
     bool running = true;
     SDL_Event event;
