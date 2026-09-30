@@ -6,29 +6,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Dépendances vcpkg
 find_package(SDL2 CONFIG REQUIRED)
-find_package(glad CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(assimp CONFIG REQUIRED)
-find_package(Stb REQUIRED)
-find_package(imgui CONFIG REQUIRED)
 
 # Exécutable
 add_executable(${PROJECT_NAME}
     source/main.cpp
+    third_party/glad/src/glad.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${Stb_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL2::SDL2
-    SDL2::SDL2main
-    glad::glad
     glm::glm
-    assimp::assimp
-    imgui::imgui
+    OpenGL::GL
 )
 
 # Copie automatique des assets dans le dossier du binaire

@@ -3,12 +3,11 @@
   "configurePresets": [
     {
       "name": "default",
-      "displayName": "Ubuntu Make + vcpkg",
+      "displayName": "Ubuntu Make",
       "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ]

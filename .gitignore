@@ -1,7 +1,8 @@
 /build/*
+/CMakeFiles/
+/__cmake_systeminformation/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
 /.vscode/*
 /.vscode
-/vcpkg_installed/*
-/vcpkg_installed
-/vcpkg/*
-/vcpkg
