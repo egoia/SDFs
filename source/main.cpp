@@ -5,8 +5,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "OrbitCamera.hpp"
-#include "Program.hpp"
+#include "orbit_camera.hpp"
+#include "program.hpp"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -90,21 +90,24 @@ int main(int argc, char* argv[]) {
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    const float quadVertices[] = {
-        -1.0f, 1.0f,
-        -1.0f, -1.0f, 
-        1.0f, 1.0f, 
-        1.0f, -1.0f
+    
+    //TODO use a box instead tp improve perforcmances
+    const GLfloat fullscreenTriangle[] = {
+        -1.0f, -1.0f,
+         3.0f, -1.0f,
+        -1.0f,  3.0f
     };
 
     GLuint vbo = 0;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glVertexAttribPointer(0, 2,  GL_FLOAT, GL_FALSE, 0,0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(fullscreenTriangle), fullscreenTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
-    Program p("assets/shaders/test.glsl");
+    Program p("assets/shaders/test.vert", "assets/shaders/test.frag");
+    p.use();
+    GLint resolutionLocation = glGetUniformLocation(p.ID, "uResolution");
 
     bool running = true;
     SDL_Event event;
@@ -119,9 +122,17 @@ int main(int argc, char* argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);   // effacer l'image
         glClear(GL_DEPTH_BUFFER_BIT);   // effacer le zbuffer, si nécessaire
 
+        int drawableWidth;
+        int drawableHeight;
+        SDL_GL_GetDrawableSize(window, &drawableWidth, &drawableHeight);
+        glUniform2f(resolutionLocation, static_cast<float>(drawableWidth), static_cast<float>(drawableHeight));
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
         SDL_GL_SwapWindow(window);
     }
 
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
     SDL_DelEventWatch(on_resize_window_callback, NULL);
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);

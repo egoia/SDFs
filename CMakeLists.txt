@@ -20,10 +20,11 @@ add_executable(${PROJECT_NAME}
     third_party/glad/src/glad.c
 )
 
-target_sources(${PROJECT_NAME} PRIVATE
-    source/Program.cpp
-    source/OrbitCamera.cpp
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
 )
+
+target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
