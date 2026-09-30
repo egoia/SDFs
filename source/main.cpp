@@ -5,7 +5,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "orbit_camera.hpp"
+#include "OrbitCamera.hpp"
+#include "Program.hpp"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) {
     //Camera
     GLfloat camera_target_dist = 3.0f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
-    orbit_camera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT);
+    OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT);
 
     //VAO
     GLuint vao = 0;
@@ -103,11 +104,14 @@ int main(int argc, char* argv[]) {
     glVertexAttribPointer(0, 2,  GL_FLOAT, GL_FALSE, 0,0);
     glEnableVertexAttribArray(0);
 
+    Program p("assets/shaders/test.glsl");
+
     bool running = true;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
+                //TODO call camera rotation
                 running = false;
             }
         }

@@ -1,6 +1,6 @@
-#include "orbit_camera.hpp"
+#include "OrbitCamera.hpp"
 
-void orbit_camera::orbit(float valueX, float valueY){
+void OrbitCamera::orbit(float valueX, float valueY){
     yaw += valueX * orbit_speed;
     pitch+= valueY * orbit_speed;
     glm::clamp(pitch, -89.0f, 89.f);
@@ -13,10 +13,10 @@ void orbit_camera::orbit(float valueX, float valueY){
     wrld_position = local_pos + target_position;
 }
 
-mat4 orbit_camera::getView()const{
+mat4 OrbitCamera::getView()const{
     return glm::lookAt(wrld_position, target_position, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
-mat4 orbit_camera::getProject()const{
+mat4 OrbitCamera::getProject()const{
     return glm::perspective(fov, WIDTH/HEIGHT, near, far);
 }

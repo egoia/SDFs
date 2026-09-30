@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 using namespace glm;
 
-class orbit_camera {
+class OrbitCamera {
     public : 
         vec3 wrld_position;
         vec3 target_position;
@@ -20,7 +20,7 @@ class orbit_camera {
         const float WIDTH;
         const float HEIGHT;
 
-        orbit_camera(const vec3& target_position, float distance, float fov, float near, float far, float width, float height) : 
+        OrbitCamera(const vec3& target_position, float distance, float fov, float near, float far, float width, float height) : 
             target_position(target_position), wrld_position(target_position+vec3(0,0,distance)), yaw(0), pitch(0), fov(radians(fov)), near(near), far(far), WIDTH(width), HEIGHT(height){};
         
         mat4 getView() const;
