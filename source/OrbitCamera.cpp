@@ -1,4 +1,4 @@
-#include "OrbitCamera.hpp"
+#include "orbit_camera.hpp"
 
 void OrbitCamera::orbit(float valueX, float valueY){
     yaw += valueX * orbit_speed;

@@ -1,4 +1,4 @@
-#include "Program.hpp"
+#include "program.hpp"
 
 std::string Program::read_shader(const std::string& shaderPath){
     std::ifstream file(shaderPath);
