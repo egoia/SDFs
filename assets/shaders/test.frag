@@ -3,66 +3,51 @@
 out vec4 FragColor;
 
 uniform vec2 uResolution;
+uniform vec3 camPos;
+uniform vec4 backgroundColor;
+uniform mat4 invMVP;
 
-const vec3 cameraPosition = vec3(0.0, 0.0, 3.0);
-const float sphereRadius = 0.75;
+const int ITERATIONS = 100000; 
+const float EPSILON = 0.01;
+const float MAX_DISTANCE = 100;
 
-float sceneDistance(vec3 point)
+float sphere_radius = 0.50;
+vec3 sphere_centre = vec3(0);
+
+float sphere_SDF(vec3 p, vec3 centre, float radius)
 {
-    return length(point) - sphereRadius;
+    return length(p-centre)-radius;
 }
 
-vec3 estimateNormal(vec3 point)
+float value(vec3 p)
 {
-    const float epsilon = 0.001;
-    return normalize(vec3(
-        sceneDistance(point + vec3(epsilon, 0.0, 0.0)) - sceneDistance(point - vec3(epsilon, 0.0, 0.0)),
-        sceneDistance(point + vec3(0.0, epsilon, 0.0)) - sceneDistance(point - vec3(0.0, epsilon, 0.0)),
-        sceneDistance(point + vec3(0.0, 0.0, epsilon)) - sceneDistance(point - vec3(0.0, 0.0, epsilon))
-    ));
+    return sphere_SDF(p,sphere_centre,sphere_radius);
+}
+
+bool sphere_tracing(vec3 rayStart, vec3 rayDir, out vec3 surfacePoint){
+    float distance = 0;
+    for(int i = 0; i<ITERATIONS; i++){
+        vec3 p = rayStart + rayDir * distance;
+        float sample = value(p); //Sphere
+        if(sample < EPSILON || distance > MAX_DISTANCE) break;
+        distance += sample; //Move along sphere
+    } 
+    surfacePoint = rayStart + rayDir * distance;
+    return distance < MAX_DISTANCE;
 }
 
 void main()
 {
-    vec2 screenPosition = (2.0 * gl_FragCoord.xy - uResolution) / uResolution.y;
-    vec3 rayDirection = normalize(vec3(screenPosition * 0.41421356, -1.0));
-    float travelDistance = 0.0;
-    bool hit = false;
-    vec3 hitPosition = vec3(0.0);
-
-    for (int stepIndex = 0; stepIndex < 128; ++stepIndex)
-    {
-        vec3 point = cameraPosition + rayDirection * travelDistance;
-        float distanceToScene = sceneDistance(point);
-
-        if (distanceToScene < 0.001)
-        {
-            hit = true;
-            hitPosition = point;
-            break;
-        }
-
-        travelDistance += distanceToScene;
-        if (travelDistance > 100.0)
-        {
-            break;
-        }
+    vec2 positionClip = (gl_FragCoord.xy / uResolution) * 2.0 - 1.0;
+    vec4 positionWorld = invMVP * vec4(positionClip, -1.0,1.0);
+    vec3 rayStart = positionWorld.xyz / positionWorld.w;
+    vec3 rayDir = rayStart - camPos;
+    vec3 surfacePoint;
+    if(sphere_tracing(rayStart, rayDir, surfacePoint)){
+        FragColor = vec4(1.0,0.0,0.0, 1.0);
+    }
+    else{
+        FragColor = backgroundColor;
     }
 
-    if (!hit)
-    {
-        vec3 background = mix(vec3(0.015, 0.025, 0.04), vec3(0.08, 0.12, 0.17),
-                              clamp(0.5 + screenPosition.y * 0.2, 0.0, 1.0));
-        FragColor = vec4(background, 1.0);
-        return;
-    }
-
-    vec3 normal = estimateNormal(hitPosition);
-    vec3 lightDirection = normalize(vec3(-0.5, 0.8, 0.6));
-    vec3 viewDirection = normalize(cameraPosition - hitPosition);
-    float diffuse = max(dot(normal, lightDirection), 0.0);
-    float specular = pow(max(dot(reflect(-lightDirection, normal), viewDirection), 0.0), 32.0);
-    vec3 color = vec3(0.12, 0.62, 0.86) * (0.16 + 0.84 * diffuse) + vec3(0.5) * specular;
-
-    FragColor = vec4(color, 1.0);
 }

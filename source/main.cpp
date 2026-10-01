@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "orbit_camera.hpp"
 #include "program.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -105,9 +106,21 @@ int main(int argc, char* argv[]) {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
-    Program p("assets/shaders/test.vert", "assets/shaders/test.frag");
-    p.use();
-    GLint resolutionLocation = glGetUniformLocation(p.ID, "uResolution");
+    Program program("assets/shaders/test.vert", "assets/shaders/test.frag");
+    program.use();
+
+    GLint resolutionLocation = glGetUniformLocation(program.ID, "uResolution");
+    GLint camPosLocation = glGetUniformLocation(program.ID, "camPos");
+
+    GLint backgroundColorLocation = glGetUniformLocation(program.ID, "backgroundColor");
+    glUniform4f(backgroundColorLocation, 0.168627451f, 0.168627451f, 0.439215686f, 1.0f);
+
+    GLint invMVPLocation = glGetUniformLocation(program.ID, "invMVP");
+    mat4 invMVP = inverse(cam.getProject() * cam.getView());
+    glUniformMatrix4fv(invMVPLocation, 1, GL_FALSE, value_ptr(invMVP));
+
+
+
 
     bool running = true;
     SDL_Event event;
@@ -126,6 +139,7 @@ int main(int argc, char* argv[]) {
         int drawableHeight;
         SDL_GL_GetDrawableSize(window, &drawableWidth, &drawableHeight);
         glUniform2f(resolutionLocation, static_cast<float>(drawableWidth), static_cast<float>(drawableHeight));
+        glUniform3fv(camPosLocation, 1, value_ptr(cam.wrld_position));
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         SDL_GL_SwapWindow(window);
