@@ -12,10 +12,11 @@ std::string Program::read_shader(const std::string& shaderPath){
     return buffer.str();
 }
 
-GLuint Program::compile_shader(GLenum type, const std::string& source){
+GLuint Program::compile_shader(GLenum type, const std::string& source, const std::string& dependancies_src){
     GLuint shader = glCreateShader(type);
-    const char* src[] = {source.c_str()};
-    glShaderSource(shader, 1, src, NULL);
+    const char* src[] = {dependancies_src.c_str(), source.c_str()};
+
+    glShaderSource(shader, 2, src, NULL);
 
     glCompileShader(shader);
 
@@ -64,25 +65,35 @@ void Program::link(GLuint vertex, GLuint frag){
 
 }
 
-Program::Program(const std::string& shaderPath){
+Program::Program(const std::string& shaderPath, const std::vector<std::string>& dependancies){
     std::string src = read_shader(shaderPath);
 
     std::string version = "#version 330\n";
     std::string vertex_def = "#define VERTEX_SHADER\n";
     std::string frag_def = "#define FRAGMENT_SHADER\n";
 
-    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, version + vertex_def + src);
-    GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, version + frag_def + src);
+    std::string dependancies_src = "";
+    for(int i = 0; i<dependancies.size(); i++){
+        dependancies_src+= read_shader(dependancies[i]) + "\n";
+    }
+
+    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, version + vertex_def + src, dependancies_src);
+    GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, version + frag_def + src, dependancies_src);
 
     link(vertex_shader, frag_shader);
 }
 
-Program::Program(const std::string& vertexShaderPath, const std::string& fragShaderPath){
+Program::Program(const std::string& vertexShaderPath, const std::string& fragShaderPath, const std::vector<std::string>& dependancies){
     std::string vertex_src = read_shader(vertexShaderPath);
     std::string frag_src = read_shader(fragShaderPath);
 
-    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_src);
-    GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, frag_src);
+    std::string dependancies_src = "#version 330\n";
+    for(int i = 0; i<dependancies.size(); i++){
+        dependancies_src+= read_shader(dependancies[i]) + "\n";
+    }
+
+    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_src, dependancies_src);
+    GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, frag_src, dependancies_src);
 
     link(vertex_shader, frag_shader);
 }

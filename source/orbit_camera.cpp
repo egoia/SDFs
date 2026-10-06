@@ -1,15 +1,15 @@
 #include "orbit_camera.hpp"
 
-void OrbitCamera::orbit(float valueX, float valueY){
-    yaw += valueX * orbit_speed;
-    pitch+= valueY * orbit_speed;
-    glm::clamp(pitch, -89.0f, 89.f);
+void OrbitCamera::orbit(float dX, float dY){
+    yaw += dX * orbit_speed;
+    pitch+= dY * orbit_speed;
+    pitch = glm::clamp(pitch, -89.0f, 89.f);
 
     float radius = distance(target_position, wrld_position);
     vec3 local_pos;
     local_pos.x = radius * cos(radians(pitch)) * cos(radians(yaw));
     local_pos.y = radius * sin(radians(pitch));
-    local_pos.z = radius * sin(radians(yaw));
+    local_pos.z = radius * sin(radians(yaw)) * cos(radians(pitch));
     wrld_position = local_pos + target_position;
 }
 

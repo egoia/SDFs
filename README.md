@@ -3,7 +3,7 @@
 `sudo apt install libsdl2-dev libglm-dev libgl-dev`
 
 # Deux pipelines
-- sphere tracing 
+- sphere tracing
 - marching cube
 
 # Primitives
@@ -20,7 +20,6 @@
 - Union (Leon)
 - Intersection (Elyas)
 - Soustraction
-- Différence
 - Union Smooth
 - Rotation
 - Translation 
@@ -30,9 +29,22 @@
 - Displacement
 - Twist
 - Bend
+- Noisify
 
 # Ideas
+- aplatir arbres dans GPU
+- Z buffer avec plusieurs draw call pour differents material types
+- compute normal not with the derivative but with normal of each primitive combined
+
+# Optimization
 - gradient avec 4 samples au lieu de 6
-- arbres dans GPU
 - BVH
+
+# Rendering 
+- BRDF 
+- BSDF ? 
+- bubble
+- water
+- lava
+- cloud
 
