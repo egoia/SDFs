@@ -2,15 +2,21 @@
 
 void OrbitCamera::orbit(float valueX, float valueY){
     yaw += valueX * orbit_speed;
-    pitch+= valueY * orbit_speed;
-    glm::clamp(pitch, -89.0f, 89.f);
+    pitch = glm::clamp(pitch - valueY * orbit_speed, -89.0f, 89.0f);
 
-    float radius = distance(target_position, wrld_position);
+    const float radius = glm::distance(target_position, wrld_position);
     vec3 local_pos;
-    local_pos.x = radius * cos(radians(pitch)) * cos(radians(yaw));
+    local_pos.x = radius * cos(radians(pitch)) * sin(radians(yaw));
     local_pos.y = radius * sin(radians(pitch));
-    local_pos.z = radius * sin(radians(yaw));
+    local_pos.z = radius * cos(radians(pitch)) * cos(radians(yaw));
     wrld_position = local_pos + target_position;
+}
+
+void OrbitCamera::zoom(float wheelDelta){
+    const float radius = glm::distance(target_position, wrld_position);
+    const float newRadius = glm::clamp(radius * std::pow(0.9f, wheelDelta), 1.25f, 50.0f);
+    const vec3 direction = glm::normalize(wrld_position - target_position);
+    wrld_position = target_position + direction * newRadius;
 }
 
 mat4 OrbitCamera::getView()const{

@@ -5,8 +5,10 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "orbit_camera.hpp"
 #include "program.hpp"
+#include "implicits.h"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -25,9 +27,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Profil OpenGL 4.6 Core
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+    // MARCHE PAS SUR WSL AVEC 4.6, A TESTER EN COURS MAIS JAI LA FLEMME LA DONC 3.3
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     //Create window
@@ -73,8 +75,8 @@ int main(int argc, char* argv[]) {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClearDepthf(1.0f);
 
-    //Pas besoin de Zbuffer et ztest
-    //Pas besoin de culling
+    // Le mesh est une vraie surface 3D : le test de profondeur masque ses faces arriere.
+    glEnable(GL_DEPTH_TEST);
 
     //transparence (pas nécessaire si discard dans le shader)
     /*glEnable(GL_BLEND);
@@ -86,36 +88,63 @@ int main(int argc, char* argv[]) {
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT);
 
-    //VAO
+    // Polygonise le champ implicite dans une boite qui contient entierement la sphere.
+    // Le meme appel fonctionnera avec de futurs champs derives qui redefinissent Value().
+    AnalyticScalarField field;
+    Mesh mesh;
+    field.Polygonize(64, mesh, Box(Vector(-1.25), Vector(1.25)));
+
+    // Aplatit les triangles en sommets position/normale, format directement consomme par OpenGL.
+    std::vector<GLfloat> meshVertices;
+    meshVertices.reserve(mesh.Triangles() * 3 * 6);
+    for (int triangle = 0; triangle < mesh.Triangles(); ++triangle) {
+        for (int corner = 0; corner < 3; ++corner) {
+            const Vector position = mesh.Vertex(triangle, corner);
+            const Vector normal = mesh.Normal(mesh.NormalIndex(triangle, corner));
+            for (int component = 0; component < 3; ++component) {
+                meshVertices.push_back(static_cast<GLfloat>(position[component]));
+            }
+            for (int component = 0; component < 3; ++component) {
+                meshVertices.push_back(static_cast<GLfloat>(normal[component]));
+            }
+        }
+    }
+
+    // Un VAO/VBO unique suffit : les sommets sont emis sans index et chaque triangle est independant.
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    
-    //TODO use a box instead tp improve perforcmances
-    const GLfloat fullscreenTriangle[] = {
-        -1.0f, -1.0f,
-         3.0f, -1.0f,
-        -1.0f,  3.0f
-    };
 
     GLuint vbo = 0;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(fullscreenTriangle), fullscreenTriangle, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glBufferData(GL_ARRAY_BUFFER, meshVertices.size() * sizeof(GLfloat), meshVertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
 
-    Program p("assets/shaders/test.vert", "assets/shaders/test.frag");
+    Program p("assets/shaders/mesh.vert", "assets/shaders/mesh.frag");
     p.use();
-    GLint resolutionLocation = glGetUniformLocation(p.ID, "uResolution");
+    const GLint viewLocation = glGetUniformLocation(p.ID, "uView");
+    const GLint projectionLocation = glGetUniformLocation(p.ID, "uProjection");
 
     bool running = true;
+    bool orbiting = false;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                //TODO call camera rotation
                 running = false;
+            } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+                orbiting = true;
+            } else if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
+                orbiting = false;
+            } else if (event.type == SDL_MOUSEMOTION && orbiting) {
+                // Le glisser gauche applique le delta de souris aux angles d'orbite.
+                cam.orbit(static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel));
+            } else if (event.type == SDL_MOUSEWHEEL) {
+                cam.zoom(static_cast<float>(event.wheel.y));
             }
         }
 
@@ -125,8 +154,19 @@ int main(int argc, char* argv[]) {
         int drawableWidth;
         int drawableHeight;
         SDL_GL_GetDrawableSize(window, &drawableWidth, &drawableHeight);
-        glUniform2f(resolutionLocation, static_cast<float>(drawableWidth), static_cast<float>(drawableHeight));
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glViewport(0, 0, drawableWidth, drawableHeight);
+
+        // Calcule la projection avec la taille reelle de la fenetre, y compris apres redimensionnement.
+        const glm::mat4 view = cam.getView();
+        const glm::mat4 projection = glm::perspective(
+            cam.fov,
+            static_cast<float>(drawableWidth) / static_cast<float>(drawableHeight),
+            cam.near,
+            cam.far
+        );
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(meshVertices.size() / 6));
 
         SDL_GL_SwapWindow(window);
     }
