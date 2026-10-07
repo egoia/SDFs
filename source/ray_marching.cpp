@@ -129,17 +129,12 @@ int main(int argc, char* argv[]) {
     const GLint projectionLocation = glGetUniformLocation(p.ID, "uProjection");
 
     bool running = true;
-    bool orbiting = false;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
-            } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-                orbiting = true;
-            } else if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
-                orbiting = false;
-            } else if (event.type == SDL_MOUSEMOTION && orbiting) {
+            } else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK)) {
                 // Le glisser gauche applique le delta de souris aux angles d'orbite.
                 cam.orbit(static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel));
             } else if (event.type == SDL_MOUSEWHEEL) {

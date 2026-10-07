@@ -130,6 +130,8 @@ int main(int argc, char* argv[]) {
             }
             if(event.type == SDL_MOUSEMOTION && event.motion.state & SDL_BUTTON_LMASK){
                 cam.orbit(event.motion.xrel, event.motion.yrel);
+            } else if (event.type == SDL_MOUSEWHEEL) {
+                cam.zoom(static_cast<float>(event.wheel.y));
             }
         }
 
