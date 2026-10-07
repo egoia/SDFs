@@ -2,6 +2,26 @@
 
 `sudo apt install libsdl2-dev libglm-dev libgl-dev`
 
+# Build
+
+Configurer et compiler le pipeline Marching Cubes :
+
+```bash
+cmake --preset marching-cube
+cmake --build --preset marching-cube
+```
+
+L'executable est genere dans `build/build-marching-cube/marching-cube`.
+
+Configurer et compiler le pipeline Sphere Tracing :
+
+```bash
+cmake --preset sphere-tracing
+cmake --build --preset sphere-tracing
+```
+
+L'executable est genere dans `build/build-sphere-tracing/sphere-tracing`.
+
 # Deux pipelines
 - sphere tracing
 - marching cube
