@@ -27,5 +27,6 @@ class OrbitCamera {
         mat4 getProject() const;
 
         void orbit(float dX, float dY);
+        void zoom(float wheelDelta);
         
 };

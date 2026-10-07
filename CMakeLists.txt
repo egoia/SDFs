@@ -14,32 +14,39 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
-# Exécutable
-add_executable(${PROJECT_NAME}
-    source/main.cpp
-    third_party/glad/src/glad.c
-)
-
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE COMMON_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
 )
 
-target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad/include
+list(REMOVE_ITEM COMMON_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/main.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/ray_marching.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/sphere_tracing.cpp"
+)
+list(APPEND COMMON_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad/src/glad.c"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL2::SDL2
-    glm::glm
-    OpenGL::GL
-)
+function(add_sdf_app target entrypoint)
+    add_executable(${target} ${entrypoint} ${COMMON_SOURCES})
 
-# Copie automatique des assets dans le dossier du binaire
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/assets
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
-)
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad/include
+    )
+
+    target_link_libraries(${target} PRIVATE
+        SDL2::SDL2
+        glm::glm
+        OpenGL::GL
+    )
+
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:${target}>/assets
+    )
+endfunction()
+
+add_sdf_app(marching-cube source/ray_marching.cpp)
+add_sdf_app(sphere-tracing source/sphere_tracing.cpp)

@@ -15,6 +15,7 @@
 - Plane
 - Donut
 - Cone
+- Bulle
 
 # Operators 
 - Union (Leon)
@@ -39,6 +40,9 @@
 # Optimization
 - gradient avec 4 samples au lieu de 6
 - BVH
+- réplications en cercle et sphere avec les coordonnées sphérique 
+- replication cylindrique 
+- replication le long d'une courbe ? (plein de donut)
 
 # Rendering 
 - BRDF 

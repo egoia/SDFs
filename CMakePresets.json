@@ -9,6 +9,30 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
+    },
+    {
+      "name": "marching-cube",
+      "displayName": "Marching Cube",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/build-marching-cube"
+    },
+    {
+      "name": "sphere-tracing",
+      "displayName": "Sphere Tracing",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/build-sphere-tracing"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "marching-cube",
+      "configurePreset": "marching-cube",
+      "targets": ["marching-cube"]
+    },
+    {
+      "name": "sphere-tracing",
+      "configurePreset": "sphere-tracing",
+      "targets": ["sphere-tracing"]
     }
   ]
 }
