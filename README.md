@@ -15,6 +15,7 @@
 - Plane
 - Donut
 - Cone
+- Bulle
 
 # Operators 
 - Union (Leon)
@@ -35,4 +36,7 @@
 - gradient avec 4 samples au lieu de 6
 - arbres dans GPU
 - BVH
+- réplications en cercle et sphere avec les coordonnées sphérique 
+- replication cylindrique 
+- replication le long d'une courbe ? (plein de donut)
 
