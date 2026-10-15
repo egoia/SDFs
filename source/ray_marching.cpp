@@ -8,6 +8,7 @@
 #include "orbit_camera.hpp"
 #include "program.hpp"
 #include "implicits.h"
+#include "SI/SDFs.hpp"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
     glViewport(0, 0, WIDTH, HEIGHT);
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClearDepthf(1.0f);
+    glClearDepth(1.0);
 
     // Le mesh est une vraie surface 3D : le test de profondeur masque ses faces arriere.
     glEnable(GL_DEPTH_TEST);
@@ -83,15 +84,49 @@ int main(int argc, char* argv[]) {
 
 
     //Camera
-    GLfloat camera_target_dist = 3.0f;
+    GLfloat camera_target_dist = 6.5f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT,0.3f);
 
-    // Polygonise le champ implicite dans une boite qui contient entierement la sphere.
-    // Le meme appel fonctionnera avec de futurs champs derives qui redefinissent Value().
-    AnalyticScalarField field;
+    auto unite = [](std::unique_ptr<NodeSDF>& left, std::unique_ptr<NodeSDF>& right)
+        -> std::unique_ptr<NodeSDF> {
+        return std::make_unique<UnionSDF>(left, right);
+    };
+
+    std::unique_ptr<NodeSDF> sphere = std::make_unique<SphereSDF>(Vector(-1.4, 0.9, 0.0), 0.48f);
+    std::unique_ptr<NodeSDF> box = std::make_unique<BoxSDF>(
+        Vector(0.0, 0.9, 0.0), Vector(0.40, 0.50, 0.40), Normalized(Vector(1.0, 1.0, 0.0)));
+    std::unique_ptr<NodeSDF> cylinder = std::make_unique<CylindreSDF>(
+        Vector(1.4, 0.35, 0.0), Vector(1.4, 1.45, 0.0), 0.38f);
+
+    std::unique_ptr<NodeSDF> intersectionLeft = std::make_unique<SphereSDF>(
+        Vector(-1.62, -0.9, 0.0), 0.48f);
+    std::unique_ptr<NodeSDF> intersectionRight = std::make_unique<SphereSDF>(
+        Vector(-1.18, -0.9, 0.0), 0.48f);
+    std::unique_ptr<NodeSDF> intersection = std::make_unique<IntersectionSDF>(
+        intersectionLeft, intersectionRight);
+
+    std::unique_ptr<NodeSDF> blendLeft = std::make_unique<SphereSDF>(
+        Vector(-0.35, -0.9, 0.0), 0.44f);
+    std::unique_ptr<NodeSDF> blendRight = std::make_unique<SphereSDF>(
+        Vector(0.35, -0.9, 0.0), 0.44f);
+    std::unique_ptr<NodeSDF> blend = std::make_unique<BlendSDF>(blendLeft, blendRight, 0.1f);
+
+    std::unique_ptr<NodeSDF> minuend = std::make_unique<SphereSDF>(
+        Vector(1.4, -0.9, 0.0), 0.52f);
+    std::unique_ptr<NodeSDF> subtrahend = std::make_unique<SphereSDF>(
+        Vector(1.68, -0.9, 0.0), 0.43f);
+    std::unique_ptr<NodeSDF> subtraction = std::make_unique<SubstractionSDF>(minuend, subtrahend);
+
+    std::unique_ptr<NodeSDF> topRow = unite(sphere, box);
+    topRow = unite(topRow, cylinder);
+    std::unique_ptr<NodeSDF> bottomRow = unite(intersection, blend);
+    bottomRow = unite(bottomRow, subtraction);
+    std::unique_ptr<NodeSDF> scene = unite(topRow, bottomRow);
+
     Mesh mesh;
-    field.Polygonize(64, mesh, Box(Vector(-1.25), Vector(1.25)));
+    scene->Polygonize(120, mesh,
+        Box(Vector(-2.3, -1.7, -0.8), Vector(2.3, 1.7, 0.8)));
 
     // Aplatit les triangles en sommets position/normale, format directement consomme par OpenGL.
     std::vector<GLfloat> meshVertices;

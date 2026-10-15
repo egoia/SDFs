@@ -36,24 +36,22 @@ public:
 class CylindreSDF : public NodeSDF
 {
 private:
-  Vector center;
-  Vector dir; 
-  float height;
+  Vector B;
+  Vector A; 
   float radius;
 public:
-  CylindreSDF(const Vector& center, const Vector& dir, const float height, const float radius);
+  CylindreSDF(const Vector& A, const Vector& B, const float radius);
   double Value(const Vector&) const override;
 };
 
 class CapsuleSDF : public NodeSDF //SEGMENT
 {
 private:
-  Vector center;
-  Vector dir; 
-  float height;
+  Vector B;
+  Vector A; 
   float threyshold;
 public:
-  CapsuleSDF(const Vector& center, const Vector& dir, const float height, const float threyshold);
+  CapsuleSDF(const Vector& A, const Vector& B, const float threyshold);
   double Value(const Vector&) const override;
 };
 
@@ -70,12 +68,11 @@ public:
 class ConeSDF : public NodeSDF
 {
 private:
-  Vector center;
-  Vector dir; 
-  float height;
+  Vector B;
+  Vector A; 
   float radius;
 public:
-  ConeSDF(const Vector& center, const Vector& dir, const float height, const float radius);
+  ConeSDF(const Vector& A, const Vector& B, const float radius);
   double Value(const Vector&) const override;
 };
 
@@ -91,7 +88,7 @@ class UnionSDF : public NodeSDF
 private : 
   std::unique_ptr<NodeSDF> left, right;
 public:
-  UnionSDF(const std::unique_ptr<NodeSDF>& left, const std::unique_ptr<NodeSDF>& right);
+  UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right);
   UnionSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create a union tree of all primitives
   double Value(const Vector&) const override;
 };
@@ -101,7 +98,7 @@ class IntersectionSDF : public NodeSDF
 private : 
   std::unique_ptr<NodeSDF> left, right;
 public:
-  IntersectionSDF(const std::unique_ptr<NodeSDF>& left, const std::unique_ptr<NodeSDF>& right);
+  IntersectionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right);
   IntersectionSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create an intersection tree of all primitives
   double Value(const Vector&) const override;
 };
@@ -110,8 +107,9 @@ class BlendSDF : public NodeSDF
 {
 private : 
   std::unique_ptr<NodeSDF> left, right;
+  float k;
 public:
-  BlendSDF(const std::unique_ptr<NodeSDF>& left, const std::unique_ptr<NodeSDF>& right);
+  BlendSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right, float k);
   BlendSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create a blend tree of all primitives
   double Value(const Vector&) const override;
 };
@@ -121,7 +119,7 @@ class SubstractionSDF : public NodeSDF
 private : 
   std::unique_ptr<NodeSDF> minuend, subtrahend;
 public:
-  SubstractionSDF(const std::unique_ptr<NodeSDF>& minuend, const std::unique_ptr<NodeSDF>& subtrahend);
+  SubstractionSDF( std::unique_ptr<NodeSDF>& minuend,  std::unique_ptr<NodeSDF>& subtrahend);
   double Value(const Vector&) const override;
 };
 
@@ -131,7 +129,7 @@ private :
   std::unique_ptr<NodeSDF> primitive;
   Vector period;
 public:
-  GridDomainRepetionSDF(const std::unique_ptr<NodeSDF>& minuend, const Vector& period);
+  GridDomainRepetionSDF( std::unique_ptr<NodeSDF>& primitive, const Vector& period);
   double Value(const Vector&) const override;
 };
 
