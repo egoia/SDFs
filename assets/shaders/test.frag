@@ -59,5 +59,4 @@ void main()
     else{
         FragColor = backgroundColor;
     }
-
 }

@@ -1,4 +1,5 @@
 #include "SI/SDFs.hpp"
+#include "mathematics.h"
 
 NodeSDF::NodeSDF() = default;
 
@@ -7,19 +8,30 @@ SphereSDF::SphereSDF(const Vector& center, const float radius)
 {
 }
 
-double SphereSDF::Value(const Vector&) const
+double SphereSDF::Value(const Vector& p) const
 {
-  return 0;
+  return Norm(center - p) - radius;
 }
 
-BoxSDF::BoxSDF(const Vector& center, const float side)
-  : center(center), side(side)
+BoxSDF::BoxSDF(const Vector& center, const Vector size, const Vector& up)
+  : center(center), size(size), up(up)
 {
 }
 
-double BoxSDF::Value(const Vector&) const
+double BoxSDF::Value(const Vector& p) const
 {
-  return 0.0;
+    Vector p_relatif = p-center;
+
+    Vector right, forward;
+    up.Orthonormal(right, forward);
+
+    Vector p_local(p_relatif * right, p_relatif * up, p_relatif * forward);
+
+    Vector q = Abs(p_local) - size;
+
+    float outside_dist = Norm(Vector::Max(q,Vector()));
+    float inside_dist = Math::Min(0.0,Math::Max(Math::Max(q[0], q[1]), q[2]));
+    return outside_dist + inside_dist;
 }
 
 CylindreSDF::CylindreSDF(const Vector& center, const Vector& dir, const float height, const float radius)
@@ -33,7 +45,7 @@ double CylindreSDF::Value(const Vector&) const
 }
 
 CapsuleSDF::CapsuleSDF(const Vector& center, const Vector& dir, const float height, const float threyshold)
-  : center(center), dir(dir), height(height), theryshold(threyshold)
+  : center(center), dir(dir), height(height), threyshold(threyshold)
 {
 }
 

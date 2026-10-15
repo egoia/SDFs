@@ -30,12 +30,10 @@ L'executable est genere dans `build/build-sphere-tracing/sphere-tracing`.
 - Sphere (Leon)
 - Box (Elyas)
 - Segment (Capsule)
-- Courbe (bonus)
 - Cylindre
 - Plane
-- Donut
 - Cone
-- Bulle
+- Donut (optionnel)
 
 # Operators 
 - Union (Leon)
@@ -67,4 +65,5 @@ L'executable est genere dans `build/build-sphere-tracing/sphere-tracing`.
 - water
 - lava
 - cloud
+- Antialiasing
 

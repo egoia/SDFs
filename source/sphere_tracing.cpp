@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 
     glViewport(0, 0, WIDTH, HEIGHT);
 
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
     glClearDepthf(1.0f);
 
     //Pas besoin de Zbuffer et ztest
@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
     GLint camPosLocation = glGetUniformLocation(program.ID, "camPos");
 
     GLint backgroundColorLocation = glGetUniformLocation(program.ID, "backgroundColor");
-    glUniform4f(backgroundColorLocation, 0.168627451f, 0.168627451f, 0.189215686f, 1.0f);
+    glUniform4f(backgroundColorLocation, 0.8f, 0.8f, 0.8f, 1.0f);
 
     GLint invMVPLocation = glGetUniformLocation(program.ID, "invMVP");
 

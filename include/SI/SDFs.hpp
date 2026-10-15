@@ -26,9 +26,10 @@ class BoxSDF : public NodeSDF
 {
 private:
   Vector center;
-  float side;
+  Vector size;
+  Vector up;
 public:
-  BoxSDF(const Vector& center, const float side);
+  BoxSDF(const Vector& center, const Vector size, const Vector& up);
   double Value(const Vector&) const override;
 };
 
@@ -50,7 +51,7 @@ private:
   Vector center;
   Vector dir; 
   float height;
-  float theryshold;
+  float threyshold;
 public:
   CapsuleSDF(const Vector& center, const Vector& dir, const float height, const float threyshold);
   double Value(const Vector&) const override;
