@@ -4,12 +4,17 @@
 
 #include <iostream>
 #include <memory>
+#include "mathematics.h"
 #include "implicits.h"
+#include "ray.h"
 
 class NodeSDF : public AnalyticScalarField
 {
 public:
   NodeSDF();
+
+  bool Intersect(const Ray& ray, double& t,
+                 double tMax = 100.0, double eps = 1e-4, int maxSteps = 256) const;
 };
 
 class SphereSDF : public NodeSDF

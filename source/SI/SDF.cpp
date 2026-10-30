@@ -1,6 +1,7 @@
 #include "SI/SDFs.hpp"
 #include "mathematics.h"
 #include <math.h>
+#include <cmath>
 #include <algorithm>
 
 NodeSDF::NodeSDF() = default;
@@ -237,4 +238,19 @@ double NoiseSDF::Noise(const Vector& x) //value noise 3D dans [-1,1]
 double NoiseSDF::Value(const Vector& p) const 
 {
   return primitive->Value(p) + amplitude * Noise(p * frequency);
+}
+
+bool NodeSDF::Intersect(const Ray& ray, double& t, double tMax, double eps, int maxSteps) const
+{
+  t = 0.0;
+  for (int i = 0; i < maxSteps; i++)
+  {
+
+    Vector p = ray(t);
+    double d= Value(p);
+    if (d<eps) return true;
+    t+=d;
+    if (t>tMax) return false;
+  }
+  return false;
 }
