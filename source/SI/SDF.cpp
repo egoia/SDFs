@@ -63,9 +63,12 @@ CapsuleSDF::CapsuleSDF(const Vector& A, const Vector& B, const float threyshold)
 {
 }
 
-double CapsuleSDF::Value(const Vector&) const
+double CapsuleSDF::Value(const Vector& p) const //from inigo quilez
 {
-  return 0.0;
+  Vector AP = p-A;
+  Vector AB = B-A;
+  double h = Math::Clamp((AP * AB) / (AB * AB), 0.0, 1.0);
+  return Norm(AP - AB*h) - threyshold;
 }
 
 PlaneSDF::PlaneSDF(const Vector& center, const Vector& normal)
@@ -73,9 +76,9 @@ PlaneSDF::PlaneSDF(const Vector& center, const Vector& normal)
 {
 }
 
-double PlaneSDF::Value(const Vector&) const
+double PlaneSDF::Value(const Vector& p) const
 {
-  return 0.0;
+  return (p-center) * Normalized(normal);
 }
 
 ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
@@ -104,11 +107,20 @@ double ConeSDF::Value(const Vector& p) const
   return 0.0;
 }
 
-DonutSDF::DonutSDF() = default;
-
-double DonutSDF::Value(const Vector&) const
+DonutSDF::DonutSDF(const Vector& center, const float R, const float r, const Vector& up)
+  : center(center), up(Normalized(up)), R(R), r(r)
 {
-  return 0.0;
+}
+
+double DonutSDF::Value(const Vector& p) const //from inigo quilez
+{
+  Vector p_relatif = p-center;
+
+  double h = p_relatif * up;
+  double d = std::sqrt(Math::Max(0.0, SquaredNorm(p_relatif) - h*h)); //distance a l'axe
+
+  double qx = d - R;
+  return std::sqrt(qx*qx + h*h) - r;
 }
 
 UnionSDF::UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right) : left(std::move(left)), right(std::move(right))
@@ -168,7 +180,61 @@ GridDomainRepetionSDF::GridDomainRepetionSDF(std::unique_ptr<NodeSDF>& primitive
 {
 }
 
-double GridDomainRepetionSDF::Value(const Vector&) const
+double GridDomainRepetionSDF::Value(const Vector& p) const 
 {
-  return 0.0;
+  Vector q = p;
+  for (int i = 0; i < 3; i++)
+    q[i] -= period[i] * std::round(p[i] / period[i]);
+  return primitive->Value(q);
+}
+
+TwistSDF::TwistSDF(std::unique_ptr<NodeSDF>& primitive, float k)
+  : primitive(std::move(primitive)), k(k)
+{
+}
+
+double TwistSDF::Value(const Vector& p) const 
+{
+  double c = std::cos(k*p[2]);
+  double s = std::sin(k*p[2]);
+  Vector q(c*p[0] - s*p[1], s*p[0] + c*p[1], p[2]);
+  return primitive->Value(q);
+}
+
+NoiseSDF::NoiseSDF(std::unique_ptr<NodeSDF>& primitive, float amplitude, float frequency)
+  : primitive(std::move(primitive)), amplitude(amplitude), frequency(frequency)
+{
+}
+
+double NoiseSDF::Hash(const Vector& p)
+{
+  Vector q;
+  for (int i = 0; i < 3; i++)
+  {
+    double x = p[i]*0.3183099 + 0.1;
+    q[i] = 17.0 * (x - std::floor(x));
+  }
+  double h = q[0]*q[1]*q[2]*(q[0]+q[1]+q[2]);
+  return h - std::floor(h);
+}
+
+double NoiseSDF::Noise(const Vector& x) //value noise 3D dans [-1,1]
+{
+  Vector i(std::floor(x[0]), std::floor(x[1]), std::floor(x[2]));
+  Vector f = x - i;
+  for (int k = 0; k < 3; k++)
+    f[k] = f[k]*f[k]*(3.0 - 2.0*f[k]);
+
+  auto mix = [](double a, double b, double t) { return a + (b-a)*t; };
+  auto h = [&](double dx, double dy, double dz) { return Hash(i + Vector(dx, dy, dz)); };
+
+  return -1.0 + 2.0*mix(mix(mix(h(0,0,0), h(1,0,0), f[0]),
+                            mix(h(0,1,0), h(1,1,0), f[0]), f[1]),
+                        mix(mix(h(0,0,1), h(1,0,1), f[0]),
+                            mix(h(0,1,1), h(1,1,1), f[0]), f[1]), f[2]);
+}
+
+double NoiseSDF::Value(const Vector& p) const 
+{
+  return primitive->Value(p) + amplitude * Noise(p * frequency);
 }
