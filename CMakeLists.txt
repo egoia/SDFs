@@ -20,7 +20,7 @@ file(GLOB_RECURSE COMMON_SOURCES CONFIGURE_DEPENDS
 
 list(REMOVE_ITEM COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/main.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/ray_marching.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/marching_cube.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/sphere_tracing.cpp"
 )
 list(APPEND COMMON_SOURCES
@@ -48,5 +48,5 @@ function(add_sdf_app target entrypoint)
     )
 endfunction()
 
-add_sdf_app(marching-cube source/ray_marching.cpp)
+add_sdf_app(marching-cube source/marching_cube.cpp)
 add_sdf_app(sphere-tracing source/sphere_tracing.cpp)
