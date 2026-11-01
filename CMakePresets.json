@@ -21,6 +21,15 @@
       "displayName": "Sphere Tracing",
       "inherits": "default",
       "binaryDir": "${sourceDir}/build/build-sphere-tracing"
+    },
+    {
+      "name": "erosion-benchmark",
+      "displayName": "Erosion Benchmark (Release)",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/build-erosion-benchmark",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -33,6 +42,11 @@
       "name": "sphere-tracing",
       "configurePreset": "sphere-tracing",
       "targets": ["sphere-tracing"]
+    },
+    {
+      "name": "erosion-benchmark",
+      "configurePreset": "erosion-benchmark",
+      "targets": ["erosion-benchmark", "erosion-viewer"]
     }
   ]
 }

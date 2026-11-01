@@ -4,13 +4,18 @@
 
 #include <iostream>
 #include <memory>
+#include "mathematics.h"
 #include "implicits.h"
+#include "ray.h"
 
 class NodeSDF : public AnalyticScalarField
 {
 public:
   NodeSDF();
   virtual std::string ToGLSL() const;
+
+  bool Intersect(const Ray& ray, double& t,
+                 double tMax = 100.0, double eps = 1e-4, int maxSteps = 256) const;
 };
 
 class SphereSDF : public NodeSDF
@@ -85,8 +90,12 @@ public:
 
 class DonutSDF : public NodeSDF
 {
+private:
+  Vector center;
+  Vector up;
+  float R, r;
 public:
-  DonutSDF();
+  DonutSDF(const Vector& center, const float R, const float r, const Vector& up = Vector(0.0, 0.0, 1.0));
   double Value(const Vector&) const override;
   std::string ToGLSL() const override;
 };
@@ -146,3 +155,35 @@ public:
   std::string ToGLSL() const override;
 };
 
+class TwistSDF : public NodeSDF
+{
+private :
+  std::unique_ptr<NodeSDF> primitive;
+  float k;
+public:
+  TwistSDF( std::unique_ptr<NodeSDF>& primitive, float k);
+  double Value(const Vector&) const override;
+};
+
+class NoiseSDF : public NodeSDF
+{
+private :
+  std::unique_ptr<NodeSDF> primitive;
+  float amplitude, frequency;
+  static double Hash(const Vector&);
+  static double Noise(const Vector&);
+public:
+  NoiseSDF( std::unique_ptr<NodeSDF>& primitive, float amplitude, float frequency);
+  double Value(const Vector&) const override;
+};
+
+class BoundingBoxSDF : public NodeSDF
+{
+  private : 
+    std::unique_ptr<BoxSDF> box;
+    std::unique_ptr<NodeSDF> tree;
+
+  public:
+  BoundingBoxSDF(std::unique_ptr<NodeSDF>& tree, std::unique_ptr<BoxSDF>& box);
+  double Value(const Vector&) const override;
+};
