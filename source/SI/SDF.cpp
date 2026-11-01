@@ -3,12 +3,52 @@
 #include <math.h>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <memory>
+#include <random>
+#include "mathematics.h"
 
 NodeSDF::NodeSDF() = default;
 
-std::string NodeSDF::ToGLSL() const
+std::string NodeSDF::ToGLSL(const std::string&) const
 {
   return {};
+}
+
+template <typename F>
+double TimeMs(F&& f)
+{
+  auto start = std::chrono::steady_clock::now();
+
+  f();
+
+  auto end = std::chrono::steady_clock::now();
+
+  return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+// Temps moyen (en microsecondes) d'un appel a Value() sur l'arbre final.
+// nbSamples : nombre de points evalues, 10000 donne une moyenne stable
+double NodeSDF::BenchmarkEvaluation(int nbSamples, unsigned seed) const
+{
+  std::mt19937 rng(seed);
+
+  std::uniform_real_distribution<double> uniform(-1.0, 1.0);
+
+  double sum = 0.0;
+
+  double ms = TimeMs([&]() {
+    for (int i = 0; i < nbSamples; i++)
+    {
+      Vector p(uniform(rng), uniform(rng), uniform(rng));
+      sum += Value(p);
+    }
+  });
+
+  std::cout << "  (checksum " << sum << ")\n";
+
+  return ms * 1000.0 / nbSamples;   
 }
 
 //* ====== SPHERE ======
@@ -17,9 +57,9 @@ SphereSDF::SphereSDF(const Vector& center, const float radius)
 {
 }
 
-std::string SphereSDF::ToGLSL() const
+std::string SphereSDF::ToGLSL(const std::string& p) const
 {
-  return "sphere_SDF(p, " + center.ToGLSL() + ", " + std::to_string(radius) +")";
+  return "sphere_SDF(" + p + ", " + center.ToGLSL() + ", " + std::to_string(radius) +")";
 }
 
 double SphereSDF::Value(const Vector& p) const
@@ -34,9 +74,9 @@ BoxSDF::BoxSDF(const Vector& center, const Vector size, const Vector& up)
 {
 }
 
-std::string BoxSDF::ToGLSL() const
+std::string BoxSDF::ToGLSL(const std::string& p) const
 {
-  return "box_SDF(p, " + center.ToGLSL() + ", " + size.ToGLSL() + ", "+ up.ToGLSL() +")";;
+  return "box_SDF(" + p + ", " + center.ToGLSL() + ", " + size.ToGLSL() + ", "+ up.ToGLSL() +")";
 }
 
 double BoxSDF::Value(const Vector& p) const
@@ -62,9 +102,9 @@ CylindreSDF::CylindreSDF(const Vector& A, const Vector& B, const float radius)
 {
 }
 
-std::string CylindreSDF::ToGLSL() const
+std::string CylindreSDF::ToGLSL(const std::string& p) const
 {
-  return "cylindre_SDF(p, " + A.ToGLSL() + ", " + B.ToGLSL() + ", " + std::to_string(radius) +")";
+  return "cylinder_SDF(" + p + ", " + A.ToGLSL() + ", " + B.ToGLSL() + ", " + std::to_string(radius) +")";
 }
 
 double CylindreSDF::Value(const Vector& p) const
@@ -103,6 +143,11 @@ double CapsuleSDF::Value(const Vector& p) const //from inigo quilez
   return distanceSegment(A,B,p) - threyshold;
 }
 
+std::string CapsuleSDF::ToGLSL(const std::string& p) const
+{
+  return "segment_SDF(" + p + ", " + A.ToGLSL() + ", " + B.ToGLSL() + ", " + std::to_string(threyshold) +")";
+}
+
 
 //* ====== PLANE ======
 PlaneSDF::PlaneSDF(const Vector& center, const Vector& normal)
@@ -115,6 +160,11 @@ double PlaneSDF::Value(const Vector& p) const
   return (p-center) * Normalized(normal);
 }
 
+std::string PlaneSDF::ToGLSL(const std::string& p) const
+{
+  return "plane_SDF(" + p + " - " + center.ToGLSL() + ", " + normal.ToGLSL() + ", 0.0)";
+}
+
 
 //* ====== CONE ======
 ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
@@ -122,10 +172,6 @@ ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
 {
 }
 
-std::string ConeSDF::ToGLSL() const
-{
-  return {};
-}
 
 double ConeSDF::Value(const Vector& p) const
 {
@@ -150,6 +196,11 @@ double ConeSDF::Value(const Vector& p) const
   return isInside ? -distance : distance;
 }
 
+std::string ConeSDF::ToGLSL(const std::string& p) const
+{
+  return "cone_SDF(" + p + ", " + A.ToGLSL() + ", " + B.ToGLSL() + ", " + std::to_string(radius) +")";
+}
+
 
 //* ====== DONUT ======
 DonutSDF::DonutSDF(const Vector& center, const float R, const float r, const Vector& up)
@@ -168,6 +219,11 @@ double DonutSDF::Value(const Vector& p) const //from inigo quilez
   return std::sqrt(qx*qx + h*h) - r;
 }
 
+std::string DonutSDF::ToGLSL(const std::string& p) const
+{
+  return "torus_SDF(" + p + ", " + center.ToGLSL() + ", " + up.ToGLSL() + ", " + std::to_string(R) + ", " + std::to_string(r) +")";
+}
+
 
 //* ====== UNION ======
 UnionSDF::UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right) : left(std::move(left)), right(std::move(right))
@@ -178,9 +234,9 @@ UnionSDF::UnionSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
 }
 
-std::string UnionSDF::ToGLSL() const
+std::string UnionSDF::ToGLSL(const std::string& p) const
 {
-  return "union_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
+  return "union_op(" + left->ToGLSL(p) + ", " + right->ToGLSL(p) +")";
 }
 
 double UnionSDF::Value(const Vector& p) const
@@ -198,9 +254,9 @@ IntersectionSDF::IntersectionSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
 }
 
-std::string IntersectionSDF::ToGLSL() const
+std::string IntersectionSDF::ToGLSL(const std::string& p) const
 {
-  return "intersection_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
+  return "intersection_op(" + left->ToGLSL(p) + ", " + right->ToGLSL(p) +")";
 }
 
 double IntersectionSDF::Value(const Vector& p) const
@@ -218,9 +274,9 @@ BlendSDF::BlendSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
 }
 
-std::string BlendSDF::ToGLSL() const
+std::string BlendSDF::ToGLSL(const std::string& p) const
 {
-  return  "blend_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
+  return  "blend_op(" + left->ToGLSL(p) + ", " + right->ToGLSL(p) +", "+ std::to_string(k)+")";
 }
 
 double BlendSDF::Value(const Vector& p) const //from inigo quilez
@@ -238,9 +294,9 @@ SubstractionSDF::SubstractionSDF( std::unique_ptr<NodeSDF>& minuend,  std::uniqu
 {
 }
 
-std::string SubstractionSDF::ToGLSL() const
+std::string SubstractionSDF::ToGLSL(const std::string& p) const
 {
-  return "substraction_SDF(p, " + minuend->ToGLSL() + ", " + subtrahend->ToGLSL() +")";
+  return "substract_op(" + minuend->ToGLSL(p) + ", " + subtrahend->ToGLSL(p) +")";
 }
 
 double SubstractionSDF::Value(const Vector& p) const
@@ -263,6 +319,10 @@ double GridDomainRepetionSDF::Value(const Vector& p) const
   return primitive->Value(q);
 }
 
+std::string GridDomainRepetionSDF::ToGLSL(const std::string& p) const
+{
+  return primitive->ToGLSL("repetition_op(" + p + ", " + period.ToGLSL() + ")");
+}
 
 //* ====== TWIST ======
 TwistSDF::TwistSDF(std::unique_ptr<NodeSDF>& primitive, float k)
@@ -277,6 +337,7 @@ double TwistSDF::Value(const Vector& p) const
   Vector q(c*p[0] - s*p[1], s*p[0] + c*p[1], p[2]);
   return primitive->Value(q);
 }
+
 
 
 //* ====== NOISE ======
@@ -319,6 +380,7 @@ double NoiseSDF::Value(const Vector& p) const
 }
 
 
+
 //* ====== SPHERE TRACING  ======
 bool NodeSDF::Intersect(const Ray& ray, double& t, double tMax, double eps, int maxSteps) const
 {
@@ -348,4 +410,8 @@ double BoundingBoxSDF::Value(const Vector& p) const
   double b = box->Value(p);
   if(b - EPSILON > 0) return b - EPSILON;
   else return tree->Value(p);
+}
+
+std::string BoundingBoxSDF::ToGLSL(const std::string&) const {
+  return "";
 }

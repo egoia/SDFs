@@ -9,6 +9,11 @@
 #include "SI/SDFs.hpp"
 #include "SI/erosion.hpp"
 
+std::unique_ptr<NodeSDF> MakeTestScene()
+{
+  return std::make_unique<BoxSDF>(Vector(0.0), Vector(0.5), Vector(0.0, 1.0, 0.0));
+}
+
 template <typename F>
 double TimeMs(F&& f)
 {
@@ -19,34 +24,6 @@ double TimeMs(F&& f)
   auto end = std::chrono::steady_clock::now();
 
   return std::chrono::duration<double, std::milli>(end - start).count();
-}
-
-std::unique_ptr<NodeSDF> MakeTestScene()
-{
-  return std::make_unique<BoxSDF>(Vector(0.0), Vector(0.5), Vector(0.0, 1.0, 0.0));
-}
-
-// Temps moyen (en microsecondes) d'un appel a Value() sur l'arbre final.
-// nbSamples : nombre de points evalues, 10000 donne une moyenne stable
-double BenchmarkEvaluation(const NodeSDF& scene, int nbSamples, unsigned seed)
-{
-  std::mt19937 rng(seed);
-
-  std::uniform_real_distribution<double> uniform(-1.0, 1.0);
-
-  double sum = 0.0;
-
-  double ms = TimeMs([&]() {
-    for (int i = 0; i < nbSamples; i++)
-    {
-      Vector p(uniform(rng), uniform(rng), uniform(rng));
-      sum += scene.Value(p);
-    }
-  });
-
-  std::cout << "  (checksum " << sum << ")\n";
-
-  return ms * 1000.0 / nbSamples;   
 }
 
 int main()
@@ -79,7 +56,7 @@ int main()
     std::unique_ptr<NodeSDF> eroded;
     double buildMs = TimeMs([&]() {
     eroded = ErodeIncremental(MakeTestScene(), nbImpacts, impactRadius, sceneCenter, sceneRadius, seed);       });
-    double evalUs = BenchmarkEvaluation(*eroded, nbSamples, seed);
+    double evalUs = eroded->BenchmarkEvaluation(nbSamples, seed);
     std::cout << "  incremental : construction " << buildMs << " ms, Value " << evalUs << " us\n";
 
 
@@ -88,7 +65,7 @@ int main()
       buildMs = TimeMs([&]() {
         eroded = ErodeBatch(MakeTestScene(), nbImpacts, batchSize, impactRadius, sceneCenter, sceneRadius, seed);
       });
-      evalUs = BenchmarkEvaluation(*eroded, nbSamples, seed);
+      evalUs = eroded->BenchmarkEvaluation(nbSamples, seed);
       std::cout << "  paquets de " << batchSize << " : construction " << buildMs << " ms, Value " << evalUs << " us\n";
 
     }

@@ -9,7 +9,7 @@ uniform mat4 invMVP;
 const int ITERATIONS = 100000; 
 const float EPSILON = 0.0001;
 const float MAX_DISTANCE = 100;
-const  float AMBIANT_LIGHT = 0.2;
+const  float AMBIANT_LIGHT = 0.4;
 const vec3 light_dir = normalize(vec3(0,-1,-1));
 
 /*float sphere_radius = 0.50;

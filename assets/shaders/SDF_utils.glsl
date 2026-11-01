@@ -99,12 +99,15 @@ float plane_SDF(vec3 p, vec3 n, float h)
     return dot(p,n) + h;
 }
 
-// tore dans le plan xz, R = grand rayon, r = rayon du tube
-float torus_SDF(vec3 p, vec3 centre, float R, float r)
+float torus_SDF(vec3 p, vec3 center, vec3 up, float R, float r)
 {
-    p -= centre;
-    vec2 q = vec2(length(p.xz)-R, p.y);
-    return length(q)-r;
+    vec3 p_relatif = p - center;
+
+    float h = dot(p_relatif, up);
+    float d = sqrt(max(0.0, dot(p_relatif, p_relatif) - h * h));
+
+    float qx = d - R;
+    return sqrt(qx * qx + h * h) - r;
 }
 
 
@@ -123,7 +126,7 @@ float substract_op(float v1, float v2){
 }
 
 // quadratic polynomial
-float smooth_union_op( float v1, float v2, float k )
+float blend_op( float v1, float v2, float k )
 {
     k *= 4.0;
     float h = max( k-abs(v1-v2), 0.0 )/k;
@@ -138,11 +141,6 @@ vec3 repetition_op(vec3 p, vec3 s)
     return p - s*round(p/s);
 }
 
-// repetition limitee : l = nombre de repetitions de chaque cote, par axe
-vec3 limited_repetition_op(vec3 p, float s, vec3 l)
-{
-    return p - s*clamp(round(p/s), -l, l);
-}
 
 // torsion autour de l'axe y, k = angle (radians) par unite de hauteur
 // attention : SDF pas exacte, il faut reduire le pas du sphere tracing si k est grand

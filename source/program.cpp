@@ -103,10 +103,10 @@ Program::Program(const std::string& vertexShaderPath, const std::string& fragSha
     std::string frag_src = read_shader(fragShaderPath);
 
     std::string dependancies_src = "#version 330\n";
-    dependancies_src += "float value(vec3 p){\n\treturn " + scene.ToGLSL() +";\n  }";
     for(int i = 0; i<dependancies.size(); i++){
         dependancies_src+= read_shader(dependancies[i]) + "\n";
     }
+    dependancies_src += "float value(vec3 p){\n\treturn " + scene.ToGLSL() +";\n  }\n";
 
     GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_src, dependancies_src);
     GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, frag_src, dependancies_src);

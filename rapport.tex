@@ -1,0 +1,167 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+
+\hypersetup{
+  pdftitle={Surfaces implicites et distances signées},
+  pdfauthor={À compléter}
+}
+
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+\captionsetup{font=small,labelfont=bf}
+
+\newcommand{\todo}[1]{\textbf{[À compléter : #1]}}
+\newcommand{\placeholderfigure}[2]{%
+  \begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][5cm][c]{0.82\textwidth}{\centering #2}}
+    \caption{#1}
+  \end{figure}
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  showstringspaces=false
+}
+
+\title{
+  Surfaces implicites\\
+  \large Projet d'informatique graphique
+}
+\author{\todo{nom(s) et prénom(s)}}
+\date{Master 2 Informatique -- 2026--2027}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+\subsection{Objectifs et réalisations}
+\todo{Présenter les deux méthodes de visualisation utilisées. Le marching cubes échantillonne le champ sur une grille, extrait un maillage puis le rend avec OpenGL. Le sphere tracing évalue le champ le long des rayons de la caméra et affiche directement la surface, ici dans un fragment shader. Comparer brièvement leurs principes et les paramètres qui influencent le résultat.}
+
+
+\subsection{Visualisation des surfaces}
+\todo{Présenter les deux méthodes de visualisation utilisées. Le marching cubes échantillonne le champ sur une grille, extrait un maillage puis le rend avec OpenGL. Le sphere tracing évalue le champ le long des rayons de la caméra et affiche directement la surface, ici dans un fragment shader. Comparer brièvement leurs principes et les paramètres qui influencent le résultat.}
+
+\subsection{Mesures de performances}
+\todo{Décrire le protocole commun : compilation Release, scènes et paramètres testés, répétitions, méthode de chronométrage et machine utilisée. Préciser selon les expériences ce qui est chronométré : évaluation de \texttt{Value}, construction d'un objet érodé ou intersection rayon--SDF.}
+Il est important de prendre en compte la distance de la camera lors de l'evaluation des performances car c'est un facteur qui agit directement sur le nombre de pixels et donc de rayon qui touchent et/ou sont proche de la surface ce qui veut dire plus d'appels à Value.
+\section{Modélisation par SDF}
+\subsection{Arbre de construction}
+\todo{Présenter la construction d'une scène à partir de primitives et d'opérateurs. Ajouter un exemple d'arbre utilisé dans le projet.}
+
+\subsection{Primitives}
+\todo{Présenter les primitives implémentées, leurs paramètres et leurs formules. Ne garder que celles qui fonctionnent.}
+
+\subsection{Opérateurs et transformations}
+\todo{Décrire les opérateurs effectivement disponibles : union, intersection, soustraction, mélange lisse, répétition, torsion et bruit, selon le périmètre réellement validé.}
+
+\subsection{Résultats et performances}
+\placeholderfigure{Maillage généré à partir d'un arbre SDF}{Insérer une capture du maillage et préciser la scène, la résolution et les paramètres.}
+\todo{Commenter le rendu et la qualité du maillage pour les scènes testées.}
+\begin{table}[htbp]
+  \centering
+  \caption{Temps d'évaluation des différentes primitives et opérations.}
+  \label{tab:sdf-performance}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Scène ou primitive & \shortstack{Nombre\\d'appels} & \shortstack{Temps\\(ms)} & \shortstack{Moyenne\\(ns)} \\
+    \midrule
+    Sphère & \ldots & \ldots & \ldots \\
+    Boîte & \ldots & \ldots & \ldots \\
+    Arbre composé & \ldots & \ldots & \ldots \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\todo{Renseigner les temps mesurés, le nombre d'appels (notamment $10^7$ si ce protocole a été utilisé) et commenter les écarts observés.}
+
+\section{Érosion procédurale}
+\subsection{Intersection rayon--SDF}
+\todo{Décrire le sphere tracing utilisé pour trouver le premier impact : point de départ, pas basé sur la distance, seuil d'arrêt, distance maximale et nombre maximal d'itérations. Préciser le comportement en cas d'échec.}
+
+\subsection{Algorithme d'érosion}
+\subsubsection{Projection des impacts}
+\todo{Expliquer le tirage des rayons sur une sphère englobante, la détermination des impacts et la soustraction de sphères à l'objet. Présenter les paramètres et la graine aléatoire.}
+
+\subsubsection{Érosion incrémentale et par paquets}
+\todo{Décrire la différence entre les deux stratégies, notamment le fait que les impacts d'un même paquet sont calculés sur la même scène avant d'être réunis et soustraits.}
+
+\subsection{Résultats}
+\todo{Préciser les paramètres de l'expérience : scène, rayon des cratères, tailles de paquets, nombres d'impacts et graine. Les conditions communes de mesure sont présentées dans l'introduction.}
+\begin{table}[htbp]
+  \centering
+  \caption{Comparaison des temps de construction et d'évaluation des arbres érodés.}
+  \label{tab:erosion}
+  \small
+  \begin{tabular}{r p{2.5cm} r r r}
+    \toprule
+    Impacts & Méthode / paquet & \shortstack{Construction\\(ms)} & \shortstack{Évaluation\\($\mu$s)} & \shortstack{Écart de\\forme (\%)} \\
+    \midrule
+    \ldots & Incrémentale & \ldots & \ldots & --- \\
+    \ldots & Paquets ($k=\ldots$) & \ldots & \ldots & \ldots \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\placeholderfigure{Comparaison visuelle des érosions}{Insérer les maillages incrémental et par paquets côte à côte, avec leurs paramètres.}
+\todo{Comparer les temps et les formes obtenues. Commenter l'effet du nombre d'impacts et de la taille des paquets.}
+
+\section{Accélération des requêtes}
+\subsection{Principe}
+\todo{Présenter l'objectif de l'accélération, le rôle d'un volume englobant et les conditions sous lesquelles sa distance permet d'éviter l'évaluation du sous-arbre.}
+
+\subsection{Structure et stratégie implémentées}
+\todo{Décrire précisément le nœud ou les structures d'accélération réalisés, leur intégration à l'arbre SDF, ainsi que la façon dont les valeurs sont combinées. Distinguer une accélération effectivement utilisée d'une piste envisagée.}
+
+\subsection{Résultats}
+\todo{Indiquer les objets, requêtes (\texttt{Value} et/ou intersection) et paramètres de volumes utilisés. Les conditions générales de mesure sont présentées dans l'introduction.}
+\begin{table}[htbp]
+  \centering
+  \caption{Comparaison des requêtes avec et sans accélération.}
+  \label{tab:acceleration}
+  \small
+  \begin{tabular}{p{4cm}p{4cm}rr}
+    \toprule
+    Requête & Variante & \shortstack{Temps\\(ms)} & Gain \\
+    \midrule
+    \texttt{Value} ou intersection & Sans volume englobant & \ldots & --- \\
+    \texttt{Value} ou intersection & Avec volume englobant & \ldots & \ldots \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\todo{Interpréter les résultats et préciser quand le test du volume englobant compense son coût.}
+
+\section{Aplatissement de l'arbre en code GLSL}
+\todo{Décrire le parcours de l'arbre et la génération de code GLSL : informations transmises pour les primitives et les opérateurs, ordre des enfants et traitement des opérateurs non commutatifs. Expliquer comment le champ généré est évalué dans le shader.}
+
+\todo{Donner un exemple court reliant un arbre SDF à son code GLSL. Préciser les limites de taille, de profondeur ou de pile rencontrées et présenter le rendu obtenu par sphere tracing.}
+
+\begin{lstlisting}[language=C++,caption={Exemple à compléter : construction d'un arbre puis génération de sa représentation GPU.},label={lst:glsl-generation}]
+// Remplacer par un extrait representatif du projet.
+\end{lstlisting}
+
+\appendix
+\section{Code source}
+\todo{Ajouter le lien vers l'archive du code demandé dans le sujet, ainsi que toute information utile pour accéder à la version évaluée.}
+
+\end{document}
