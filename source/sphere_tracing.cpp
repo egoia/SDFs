@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
     //Camera
-    GLfloat camera_target_dist = 3.0f;
+    GLfloat camera_target_dist = 14.0f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT,0.3f);
 
@@ -109,13 +109,14 @@ int main(int argc, char* argv[]) {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
-    std::unique_ptr<NodeSDF> scene =
-        SDFScenes::BuildPerformanceScene(SDFScenes::PrimitiveType::Sphere);
-    std::unique_ptr<SphereSDF> sphere = std::make_unique<SphereSDF>(Vector(0.0), 1.0f);
-    sphere->BenchmarkEvaluation(100, 1);
+    //std::unique_ptr<NodeSDF> scene = SDFScenes::BuildPerformanceScene(SDFScenes::PrimitiveType::Torus, 100);
+    std::unique_ptr<NodeSDF> scene = SDFScenes::BuildPerformanceScene(SDFScenes::PrimitiveType::Cone, 500);    
+    for(int i =0; i<3; i++){
+        std::cout << "perf value : " << scene->BenchmarkEvaluation(10000, 1) << std::endl;
+    }
     
     Program program(
-        "assets/shaders/test.vert", "assets/shaders/test.frag",
+        "assets/shaders/SphereTracing.vert", "assets/shaders/SphereTracing.frag",
         {"assets/shaders/SDF_utils.glsl"}, *scene);
     program.use();
 

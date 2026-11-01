@@ -82,14 +82,16 @@ int main(int argc, char* argv[]) {
 
 
     //Camera
-    GLfloat camera_target_dist = 24.0f;
+    GLfloat camera_target_dist = 3.0f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT,0.3f);
 
-    // La scene de demonstration s'etend approximativement de x=-10 a x=10.
-    std::unique_ptr<NodeSDF> scene = SDFScenes::BuildDemoScene();
+    std::unique_ptr<NodeSDF> scene = SDFScenes::BuildPerformanceScene(SDFScenes::PrimitiveType::Torus, 1);
+    for(int i =0; i<3; i++){
+        std::cout << "Sphere perf value : " << scene->BenchmarkEvaluation(10000000, 1) << std::endl;
+    }
     Mesh mesh;
-    scene->Polygonize(128, mesh, Box(Vector(-10.0, -3.0, -1.0), Vector(10.0, 3.0, 1.0)));
+    scene->Polygonize(264, mesh, Box(Vector(-1, -3.0, -1), Vector(1, 3.0, 1)));
 
     // Aplatit les triangles en sommets position/normale, format directement consomme par OpenGL.
     std::vector<GLfloat> meshVertices;

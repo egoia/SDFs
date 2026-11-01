@@ -3,6 +3,7 @@
 #include "SI/SDFs.hpp"
 
 #include <memory>
+#include <random>
 #include <vector>
 
 namespace SDFScenes {
@@ -79,17 +80,33 @@ inline std::unique_ptr<NodeSDF> BuildDemoScene()
     return scene;
 }
 
-inline std::unique_ptr<NodeSDF> BuildPerformanceScene(PrimitiveType type)
+inline std::unique_ptr<NodeSDF> BuildBlendScene()
 {
-    constexpr int objectCount = 1000;
-    const Vector center(0.0, 0.0, 0.0);
-    constexpr float radius = 0.1f;
-    constexpr double halfHeight = 0.1;
+    const Vector up(0.0, 1.0, 0.0);
+    constexpr float blendRadius = 0.3f;
+
+    std::unique_ptr<NodeSDF> leftSphere =
+        std::make_unique<SphereSDF>(Vector(-1.6, 1.0, 0.0), 0.75f);
+    std::unique_ptr<NodeSDF> cube =
+        std::make_unique<BoxSDF>(Vector(0.0), Vector(0.65), up);
+    std::unique_ptr<NodeSDF> rightSphere =
+        std::make_unique<SphereSDF>(Vector(1.6, -1.0, .0), 0.75f);
+
+    std::unique_ptr<NodeSDF> leftBlend =
+        std::make_unique<BlendSDF>(leftSphere, cube, blendRadius);
+    return std::make_unique<BlendSDF>(leftBlend, rightSphere, blendRadius);
+}
+
+inline std::unique_ptr<NodeSDF> BuildPerformanceScene(PrimitiveType type, int count)
+{
+    Vector center(0.0, 0.0, 0.0);
+    float radius = 0.1f;
+    double halfHeight = 0.1;
 
     std::vector<std::unique_ptr<NodeSDF>> objects;
-    objects.reserve(objectCount);
+    objects.reserve(count);
 
-    for (int i = 0; i < objectCount; ++i) {
+    for (int i = 0; i < count; ++i) {
         std::unique_ptr<NodeSDF> object;
 
         switch (type) {
@@ -145,6 +162,52 @@ inline std::unique_ptr<NodeSDF> BuildPerformanceScene(PrimitiveType type)
     }
 
     return std::move(objects.front());
+}
+
+inline std::unique_ptr<NodeSDF> BuildSphereUnionScene()
+{
+    constexpr int sphereCount = 500;
+    constexpr float radius = 0.055f;
+    constexpr double centerLimit = 0.745;
+    std::mt19937 randomEngine(42);
+    std::uniform_real_distribution<double> position(-centerLimit, centerLimit);
+
+    std::vector<std::unique_ptr<NodeSDF>> objects;
+    objects.reserve(sphereCount);
+
+    for (int i = 0; i < sphereCount; ++i) {
+        const Vector center(
+            position(randomEngine),
+            position(randomEngine),
+            position(randomEngine));
+        objects.push_back(std::make_unique<SphereSDF>(center, radius));
+    }
+
+    while (objects.size() > 1) {
+        std::vector<std::unique_ptr<NodeSDF>> nextLevel;
+        nextLevel.reserve((objects.size() + 1) / 2);
+
+        for (std::size_t i = 0; i < objects.size(); i += 2) {
+            if (i + 1 < objects.size()) {
+                nextLevel.push_back(
+                    std::make_unique<UnionSDF>(objects[i], objects[i + 1]));
+            } else {
+                nextLevel.push_back(std::move(objects[i]));
+            }
+        }
+
+        objects = std::move(nextLevel);
+    }
+
+    return std::move(objects.front());
+}
+
+inline std::unique_ptr<NodeSDF> BuildSphereUnionSceneWithBoundingBox()
+{
+    std::unique_ptr<NodeSDF> scene = BuildSphereUnionScene();
+    std::unique_ptr<BoxSDF> boundingBox =
+        std::make_unique<BoxSDF>(Vector(0.0), Vector(0.9), Vector(0.0, 1.0, 0.0));
+    return std::make_unique<BoundingBoxSDF>(scene, boundingBox);
 }
 
 } 

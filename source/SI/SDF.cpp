@@ -46,7 +46,6 @@ double NodeSDF::BenchmarkEvaluation(int nbSamples, unsigned seed) const
     }
   });
 
-  std::cout << "  (checksum " << sum << ")\n";
 
   return ms * 1000.0 / nbSamples;   
 }
@@ -412,6 +411,11 @@ double BoundingBoxSDF::Value(const Vector& p) const
   else return tree->Value(p);
 }
 
-std::string BoundingBoxSDF::ToGLSL(const std::string&) const {
-  return "";
+std::string BoundingBoxSDF::ToGLSL(const std::string& p) const {
+  const std::string boxDistance = box->ToGLSL(p);
+  constexpr const char* marchEpsilonOffset = "0.0002";
+
+  return "((" + boxDistance + " > 0.0) ? "
+       "(" + boxDistance + " + " + marchEpsilonOffset + ") : "
+       "(" + tree->ToGLSL(p) + "))";
 }

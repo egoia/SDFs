@@ -5,6 +5,7 @@
 \usepackage[french]{babel}
 \usepackage{lmodern}
 \usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{array}
@@ -12,6 +13,7 @@
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \usepackage{caption}
+\usepackage{float}
 
 \hypersetup{
   pdftitle={Surfaces implicites et distances signées},
@@ -23,6 +25,53 @@
 \captionsetup{font=small,labelfont=bf}
 
 \newcommand{\todo}[1]{\textbf{[À compléter : #1]}}
+\newcommand{\filename}[1]{\textbf{\textit{\texttt{#1}}}}
+\newcommand{\valueSphere}{13.6}
+\newcommand{\valueBox}{49.6}
+\newcommand{\valuePlan}{14.6}
+\newcommand{\valueCylinder}{31.6}
+\newcommand{\valueCapsule}{18.7}
+\newcommand{\valueCone}{48.05}
+\newcommand{\valueDonut}{14.8}
+\newcommand{\primitiveEvaluation}[6]{%
+  \par\medskip
+  \noindent
+  \begin{minipage}[t]{0.47\textwidth}
+      \centering
+      \IfFileExists{#2}{%
+        \includegraphics[width=\linewidth,height=5cm,keepaspectratio]{#2}%
+      }{%
+        \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering
+          Photo 1 à ajouter}}%
+      }
+      \par\small Marching cubes
+  \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.47\textwidth}
+      \centering
+      \IfFileExists{#3}{%
+        \includegraphics[width=\linewidth,height=5cm,keepaspectratio]{#3}%
+      }{%
+        \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering
+          Photo 2 à ajouter}}%
+      }
+      \par\small Sphere tracing
+  \end{minipage}
+  \captionof{figure}{Deux vues de la primitive #1.}
+  \par\smallskip
+  \begin{center}
+    \captionof{table}{Performances d'évaluation de la primitive #1.}
+    \small
+    \begin{tabular}{p{2.2cm}p{1.4cm}p{2.5cm}p{4.6cm}}
+      \toprule
+      Primitive & FPS & \shortstack{Temps/frame\\(ms)} &
+        \shortstack{Temps moyen de\\\texttt{Value} ($\mu$s/appel)} \\
+      \midrule
+      #1 & #4 & #5 & #6 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+}
 \newcommand{\placeholderfigure}[2]{%
   \begin{figure}[htbp]
     \centering
@@ -37,14 +86,14 @@
   frame=single,
   numbers=left,
   numberstyle=\tiny,
-  showstringspaces=false
+  showstringspaces=false,
+  literate={é}{{\'e}}1
 }
 
 \title{
   Surfaces implicites\\
-  \large Projet d'informatique graphique
 }
-\author{\todo{nom(s) et prénom(s)}}
+\author{Saidoune Elyas et Lepers Leon}
 \date{Master 2 Informatique -- 2026--2027}
 
 \begin{document}
@@ -54,114 +103,306 @@
 
 \section{Introduction}
 \subsection{Objectifs et réalisations}
-\todo{Présenter les deux méthodes de visualisation utilisées. Le marching cubes échantillonne le champ sur une grille, extrait un maillage puis le rend avec OpenGL. Le sphere tracing évalue le champ le long des rayons de la caméra et affiche directement la surface, ici dans un fragment shader. Comparer brièvement leurs principes et les paramètres qui influencent le résultat.}
-
-
-\subsection{Visualisation des surfaces}
-\todo{Présenter les deux méthodes de visualisation utilisées. Le marching cubes échantillonne le champ sur une grille, extrait un maillage puis le rend avec OpenGL. Le sphere tracing évalue le champ le long des rayons de la caméra et affiche directement la surface, ici dans un fragment shader. Comparer brièvement leurs principes et les paramètres qui influencent le résultat.}
+Pour ce devoir nous avons abordé trois des quatre sujets : la modélisation de Signed Distance Field, l'algorithme d'érosion ainsi que le volume englobant. En plus de ces trois sujets nous avons mis en place une méthode de visualisation supplémentaire à celle fournie utilisant le marching cube. Nous avons développé une visualisation en temps réel via lancer de rayon et sphère tracing.
+Ce supplément est décrit dans sa partie ainsi que l'aplatissement des arbres en GLSL.
 
 \subsection{Mesures de performances}
-\todo{Décrire le protocole commun : compilation Release, scènes et paramètres testés, répétitions, méthode de chronométrage et machine utilisée. Préciser selon les expériences ce qui est chronométré : évaluation de \texttt{Value}, construction d'un objet érodé ou intersection rayon--SDF.}
-Il est important de prendre en compte la distance de la camera lors de l'evaluation des performances car c'est un facteur qui agit directement sur le nombre de pixels et donc de rayon qui touchent et/ou sont proche de la surface ce qui veut dire plus d'appels à Value.
+Pour mesurer les performances nous avons pris la mesure de la durée des appels aux fonctions Value et Intersect et nous nous sommes également basés sur les images par seconde ainsi que le temps de calcul d'une image.
+Cette dernière valeur est pertinente car la scène est calculée en temps réel avec des appels aux fonctions Value et avec des lancers de rayon mais elle est à nuancer car sa valeur finale est influencée par le nombre de pixels occupés par l'objet. Sa mesure a donc été prise avec précaution en essayant de garder une surface occupée à l'écran semblable pour chaque primitive.
+
 \section{Modélisation par SDF}
 \subsection{Arbre de construction}
-\todo{Présenter la construction d'une scène à partir de primitives et d'opérateurs. Ajouter un exemple d'arbre utilisé dans le projet.}
-
+Les scènes sont représentées sous forme d'arbres. Chaque primitive ainsi que chaque opérateur hérite de la classe NodeSDF, les opérateurs sont des nœuds parents tandis que les primitives sont des feuilles. L'ensemble des primitives et opérateurs est défini dans le fichier \filename{SDF.cpp}.
 \subsection{Primitives}
-\todo{Présenter les primitives implémentées, leurs paramètres et leurs formules. Ne garder que celles qui fonctionnent.}
+Ci-dessous vous trouverez l'ensemble des primitives que nous avons définies. Pour chacune d'entre elles, une image générée par marching cube (elle y apparaît en bleu) et une autre image générée par sphere tracing (elle y apparaît en rouge) sont présentées avec un tableau qui détaille les performances.
+Ici les FPS et le temps par frame sont calculés pour 500 exemplaires d'une même primitive placés au même endroit (et donc occupant chacun le même nombre de pixels) et pour le temps d'évaluation de Value il est moyenné sur $10^7$ évaluations. Dans le cas du plan, NR signifie "non représentatif", car il prend une trop grande partie de l'écran.
 
-\subsection{Opérateurs et transformations}
-\todo{Décrire les opérateurs effectivement disponibles : union, intersection, soustraction, mélange lisse, répétition, torsion et bruit, selon le périmètre réellement validé.}
+\subsubsection{Sphère}
+\primitiveEvaluation{Sphère}{Pictures/sphere-1.png}{Pictures/sphere-2.png}{40.0}{24.9}{\valueSphere}
+
+\subsubsection{Box}
+\primitiveEvaluation{Box}{Pictures/cube-1.png}{Pictures/cube-2.png}{24.6}{40.6}{\valueBox}
+
+\subsubsection{Plan}
+\primitiveEvaluation{Plan}{Pictures/plan-1.png}{Pictures/plan-2.png}{NR}{NR}{\valuePlan}
+
+\subsubsection{Cylindre}
+\primitiveEvaluation{Cylindre}{Pictures/cylindre-1.png}{Pictures/cylindre-2.png}{32.9}{30.38}{\valueCylinder}
+
+\subsubsection{Capsule}
+\primitiveEvaluation{Capsule}{Pictures/capsule-1.png}{Pictures/capsule-2.png}{39.8}{25.24}{\valueCapsule}
+
+\subsubsection{Cone}
+\primitiveEvaluation{Cone}{Pictures/cone-1.png}{Pictures/cone-2.png}{16}{62.58}{\valueCone}
+
+\subsubsection{Donut}
+\primitiveEvaluation{Donut}{Pictures/donut-1.png}{Pictures/donut-2.png}{41.0}{24.43}{\valueDonut}
 
 \subsection{Résultats et performances}
-\placeholderfigure{Maillage généré à partir d'un arbre SDF}{Insérer une capture du maillage et préciser la scène, la résolution et les paramètres.}
-\todo{Commenter le rendu et la qualité du maillage pour les scènes testées.}
-\begin{table}[htbp]
-  \centering
-  \caption{Temps d'évaluation des différentes primitives et opérations.}
-  \label{tab:sdf-performance}
-  \small
-  \begin{tabular}{lrrr}
-    \toprule
-    Scène ou primitive & \shortstack{Nombre\\d'appels} & \shortstack{Temps\\(ms)} & \shortstack{Moyenne\\(ns)} \\
-    \midrule
-    Sphère & \ldots & \ldots & \ldots \\
-    Boîte & \ldots & \ldots & \ldots \\
-    Arbre composé & \ldots & \ldots & \ldots \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
-\todo{Renseigner les temps mesurés, le nombre d'appels (notamment $10^7$ si ce protocole a été utilisé) et commenter les écarts observés.}
+\begin{center}
+  \small\textit{Temps relatif : évaluation de \texttt{Value} / évaluation de la sphère}
+  \par\smallskip
+  \setlength{\unitlength}{1pt}
+  \begin{picture}(420,190)
+    \put(48,25){\line(1,0){350}}
+    \put(48,25){\line(0,1){135}}
+
+    \put(48,58.75){\color{gray!50}\line(1,0){350}}
+    \put(48,92.5){\color{gray!50}\line(1,0){350}}
+    \put(48,126.25){\color{gray!50}\line(1,0){350}}
+    \put(48,160){\color{gray!50}\line(1,0){350}}
+    \put(39,58.75){\makebox(0,0)[r]{1}}
+    \put(39,92.5){\makebox(0,0)[r]{2}}
+    \put(39,126.25){\makebox(0,0)[r]{3}}
+    \put(39,160){\makebox(0,0)[r]{4}}
+    \put(39,25){\makebox(0,0)[r]{0}}
+
+    \put(63,25){\color{blue}\rule{25pt}{\fpeval{\valueSphere/\valueSphere*33.75}pt}}
+    \put(67,\fpeval{30+\valueSphere/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueSphere/\valueSphere,2)}}}
+    \put(113,25){\color{blue}\rule{25pt}{\fpeval{\valueBox/\valueSphere*33.75}pt}}
+    \put(117,\fpeval{30+\valueBox/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueBox/\valueSphere,2)}}}
+    \put(163,25){\color{blue}\rule{25pt}{\fpeval{\valuePlan/\valueSphere*33.75}pt}}
+    \put(167,\fpeval{30+\valuePlan/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valuePlan/\valueSphere,2)}}}
+    \put(213,25){\color{blue}\rule{25pt}{\fpeval{\valueCylinder/\valueSphere*33.75}pt}}
+    \put(217,\fpeval{30+\valueCylinder/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueCylinder/\valueSphere,2)}}}
+    \put(263,25){\color{blue}\rule{25pt}{\fpeval{\valueCapsule/\valueSphere*33.75}pt}}
+    \put(267,\fpeval{30+\valueCapsule/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueCapsule/\valueSphere,2)}}}
+    \put(313,25){\color{blue}\rule{25pt}{\fpeval{\valueCone/\valueSphere*33.75}pt}}
+    \put(317,\fpeval{30+\valueCone/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueCone/\valueSphere,2)}}}
+    \put(363,25){\color{blue}\rule{25pt}{\fpeval{\valueDonut/\valueSphere*33.75}pt}}
+    \put(367,\fpeval{30+\valueDonut/\valueSphere*33.75}){\makebox(17,0)[c]{\fpeval{round(\valueDonut/\valueSphere,2)}}}
+
+    \put(75,12){\makebox(0,0)[c]{Sphère}}
+    \put(125,12){\makebox(0,0)[c]{Boîte}}
+    \put(175,12){\makebox(0,0)[c]{Plan}}
+    \put(225,12){\makebox(0,0)[c]{Cylindre}}
+    \put(275,12){\makebox(0,0)[c]{Capsule}}
+    \put(325,12){\makebox(0,0)[c]{Cône}}
+    \put(375,12){\makebox(0,0)[c]{Donut}}
+    \put(220,-8){\makebox(0,0)[c]{Primitive}}
+  \end{picture}
+  \captionof{figure}{Temps moyen d'évaluation de \texttt{Value}, normalisé par celui de la sphère ($\valueSphere~\mu$s/appel).}
+\end{center}
+
+La figure ci-dessus utilise la sphère comme primitive de référence, nous la considérons comme la plus "simple".
+ On peut y voir que le plan ainsi que le donut sont sensiblement similaires à la sphère. La boite est la primitive la plus longue 
+ à calculer car nous l'avons définie de sorte à pouvoir lui appliquer facilement une rotation. 
+ Les calculs supplémentaires peuvent donc expliquer ses performances.
+
+\subsection{Opérateurs et transformations}
+
+Ci-dessous des images des quatre opérateurs définis dans le projet.
+
+\subsubsection{Union}
+\begin{center}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=5cm,keepaspectratio]{Pictures/union.png}
+  \captionof{figure}{Résultat de l'union.}
+\end{center}
+
+\subsubsection{Intersection}
+\begin{center}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=5cm,keepaspectratio]{Pictures/intersection.png}
+  \captionof{figure}{Résultat de l'intersection entre un cube et une sphère.}
+\end{center}
+
+\subsubsection{Soustraction}
+\begin{center}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=5cm,keepaspectratio]{Pictures/soustraction.png}
+  \captionof{figure}{Résultat de la soustraction.}
+\end{center}
+
+\subsubsection{Blend}
+\begin{center}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=5cm,keepaspectratio]{Pictures/blend.png}
+  \captionof{figure}{Résultat du blend.}
+\end{center}
 
 \section{Érosion procédurale}
+L'objectif est de simuler le vieillissement d'un objet : on projette sur lui des sphères qui creusent localement sa surface. Toute l'érosion est faite côté CPU sur l'arbre C++ (fichiers \texttt{SI/erosion.hpp} et \texttt{SI/erosion.cpp}) ; les mesures sont dans un programme séparé (\texttt{erosion\_benchmark.cpp}).
+
 \subsection{Intersection rayon--SDF}
-\todo{Décrire le sphere tracing utilisé pour trouver le premier impact : point de départ, pas basé sur la distance, seuil d'arrêt, distance maximale et nombre maximal d'itérations. Préciser le comportement en cas d'échec.}
+L'intersection est la méthode \texttt{bool NodeSDF::Intersect(const Ray\& ray, double\& t, double tMax, double eps, int maxSteps) const}, disponible pour tous les nœuds de l'arbre. Elle utilise le sphere tracing : en un point $p$, la valeur $d = f(p)$ du champ est la distance à la surface la plus proche, donc on peut avancer de $d$ le long du rayon sans traverser la surface.
+
+On part de l'origine du rayon ($t = 0$) puis, à chaque itération :
+\begin{enumerate}
+  \item on calcule $p = o + t\,\vec{u}$ et $d = f(p)$ ;
+  \item si $d < \varepsilon$ ($\varepsilon = 10^{-4}$), on est sur la surface : on renvoie \texttt{true} et $t$ contient la distance d'impact ;
+  \item sinon on avance : $t \leftarrow t + d$ ;
+  \item si $t > t_{\max}$ ($t_{\max} = 100$), le rayon est sorti de la scène : on renvoie \texttt{false}.
+\end{enumerate}
+Au-delà de 256 itérations, on considère aussi qu'il n'y a pas d'impact. La direction $\vec{u}$ doit être normalisée, sinon $t$ n'est plus une distance. L'origine doit être hors de l'objet.
 
 \subsection{Algorithme d'érosion}
 \subsubsection{Projection des impacts}
-\todo{Expliquer le tirage des rayons sur une sphère englobante, la détermination des impacts et la soustraction de sphères à l'objet. Présenter les paramètres et la graine aléatoire.}
+Les projectiles partent d'une sphère englobante de centre $c$ et de rayon $R$ qui contient l'objet. Pour chaque projectile, on tire une direction $\vec{v}$ uniforme sur la sphère de rayon 1 (tirage par rejet : un point uniforme dans le cube $[-1,1]^3$ est gardé s'il est dans la boule de rayon 1, puis normalisé). Le rayon part de $c + R\,\vec{v}$ et vise le centre, avec la direction $-\vec{v}$.
+
+Si le rayon touche l'objet en $t$, on crée une sphère de rayon $r$ (le cratère) centrée au point d'impact, et on la soustrait à l'objet avec l'opérateur de soustraction : $f \leftarrow \max(f, -f_{\text{sphère}})$. Le générateur pseudo-aléatoire est initialisé avec une graine : à graine égale, les deux méthodes ci-dessous tirent exactement les mêmes rayons, ce qui permet de les comparer.
 
 \subsubsection{Érosion incrémentale et par paquets}
-\todo{Décrire la différence entre les deux stratégies, notamment le fait que les impacts d'un même paquet sont calculés sur la même scène avant d'être réunis et soustraits.}
+\paragraph{Incrémentale.} Chaque cratère est soustrait dès qu'il est créé. Le rayon suivant est donc lancé sur l'objet déjà creusé, et il peut tomber au fond d'un cratère précédent pour creuser plus profond. L'arbre obtenu est une chaîne de $n$ soustractions :
+\[
+  \mathrm{Sub}(\dots\mathrm{Sub}(\mathrm{Sub}(\text{objet}, s_0), s_1)\dots, s_{n-1}).
+\]
+
+\paragraph{Par paquets.} Les rayons sont regroupés par paquets de $k$. Les $k$ rayons d'un paquet sont tous lancés sur le même objet, celui d'avant le paquet. Leurs cratères sont ensuite réunis dans un arbre d'unions équilibré (fonction \texttt{MakeUnionTree}, profondeur $\lceil\log_2 k\rceil$), qui est soustrait en une seule fois :
+\[
+  \mathrm{Sub}(\dots\mathrm{Sub}(\text{objet}, \mathrm{Union}(\text{paquet}_0))\dots, \mathrm{Union}(\text{paquet}_{\lceil n/k\rceil-1})).
+\]
+Les rayons d'un même paquet ne voient donc pas les cratères les uns des autres. Pour $k = 1$, on retrouve exactement l'arbre incrémental.
+
+Dans les deux cas, si les $n$ rayons touchent l'objet, l'arbre contient $n$ sphères et $2n+1$ nœuds. Seule sa forme change : l'arbre incrémental a une profondeur $n+1$, l'arbre par paquets une profondeur $\lceil n/k\rceil + \lceil\log_2 k\rceil + 1$.
 
 \subsection{Résultats}
-\todo{Préciser les paramètres de l'expérience : scène, rayon des cratères, tailles de paquets, nombres d'impacts et graine. Les conditions communes de mesure sont présentées dans l'introduction.}
-\begin{table}[htbp]
+\paragraph{Protocole.} L'objet est une boîte de demi-côtés 0,5, les cratères ont un rayon de 0,05, et la même graine est utilisée pour toutes les méthodes, qui tirent donc les mêmes rayons. On fait varier le nombre d'impacts $n$ de 100 à 4000 et la taille des paquets $k$ de 5 à 500. Pour chaque configuration, on mesure le temps de \textbf{construction} de l'objet érodé et le temps d'un appel à \textbf{\texttt{Value}} sur l'objet final. La précision est comparée visuellement.
+
+\subsubsection{Analyse : incrémental contre paquets}
+
+\paragraph{Incrémentale : plus précise, mais plus longue.} Chaque rayon est lancé sur l'objet déjà creusé par tous les impacts précédents. Un projectile qui tombe dans un cratère creuse donc plus profond : c'est le comportement attendu d'une érosion, et c'est la référence de précision. En contrepartie, l'arbre est une chaîne de $n$ soustractions, très profonde :
+\begin{itemize}
+  \item la construction coûte cher, car le rayon $i$ doit parcourir un arbre qui contient déjà les $i$ cratères précédents. Le temps est multiplié par 5 à 7 quand $n$ double (tableau~\ref{tab:erosion-construction}) : il est quadratique, et même un peu plus, car la surface creusée demande plus de pas de sphere tracing ;
+  \item l'objet final est aussi plus lent à évaluer, environ deux fois plus que par paquets pour le même nombre de cratères (tableau~\ref{tab:erosion-value}).
+\end{itemize}
+
+\begin{table}[H]
   \centering
-  \caption{Comparaison des temps de construction et d'évaluation des arbres érodés.}
-  \label{tab:erosion}
+  \caption{Temps de construction (ms) selon le nombre d'impacts $n$ et la taille des paquets $k$.}
+  \label{tab:erosion-construction}
   \small
-  \begin{tabular}{r p{2.5cm} r r r}
+  \begin{tabular}{rrrrrrrr}
     \toprule
-    Impacts & Méthode / paquet & \shortstack{Construction\\(ms)} & \shortstack{Évaluation\\($\mu$s)} & \shortstack{Écart de\\forme (\%)} \\
+    $n$ & Incrémentale & $k=5$ & $k=10$ & $k=25$ & $k=50$ & $k=100$ & $k=500$ \\
     \midrule
-    \ldots & Incrémentale & \ldots & \ldots & --- \\
-    \ldots & Paquets ($k=\ldots$) & \ldots & \ldots & \ldots \\
+    100  & 0,27 & 0,14 & 0,13 & 0,11 & 0,09 & & \\
+    500  & 8,34 & 4,12 & 3,59 & 3,25 & 2,99 & 2,64 & \\
+    1000 & 42,7 & 20,9 & 18,5 & 16,4 & 15,6 & 14,5 & 6,94 \\
+    2000 & 223  & 111  & 99,3 & 89,6 & 85,0 & 81,1 & 54,5 \\
+    4000 & 1618 & 824  & 754  & 673  & 608  & 569  & 356 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\placeholderfigure{Comparaison visuelle des érosions}{Insérer les maillages incrémental et par paquets côte à côte, avec leurs paramètres.}
-\todo{Comparer les temps et les formes obtenues. Commenter l'effet du nombre d'impacts et de la taille des paquets.}
+\begin{table}[H]
+  \centering
+  \caption{Temps d'un appel à \texttt{Value} sur l'objet final ($\mu$s).}
+  \label{tab:erosion-value}
+  \small
+  \begin{tabular}{rrrrrrrr}
+    \toprule
+    $n$ & Incrémentale & $k=5$ & $k=10$ & $k=25$ & $k=50$ & $k=100$ & $k=500$ \\
+    \midrule
+    100  & 0,86 & 0,41 & 0,37 & 0,37 & 0,38 & & \\
+    500  & 4,44 & 2,21 & 1,92 & 1,79 & 1,69 & 1,69 & \\
+    1000 & 9,10 & 4,53 & 4,08 & 3,74 & 3,55 & 3,52 & 3,51 \\
+    2000 & 18,0 & 8,86 & 8,17 & 7,44 & 7,17 & 6,98 & 7,06 \\
+    4000 & 34,6 & 19,2 & 17,3 & 14,9 & 14,3 & 14,0 & 14,0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Gain des paquets par rapport à l'érosion incrémentale pour $n = 4000$.}
+  \label{tab:erosion-synthese}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    $k$ & 5 & 10 & 25 & 50 & 100 & 500 \\
+    \midrule
+    Construction   & $\times$2,0 & $\times$2,1 & $\times$2,4 & $\times$2,7 & $\times$2,8 & $\times$4,5 \\
+    \texttt{Value} & $\times$1,8 & $\times$2,0 & $\times$2,3 & $\times$2,4 & $\times$2,5 & $\times$2,5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Pictures/erosion.png}
+  \caption{Maillages des deux objets érodés obtenus par marching cubes (résolution 100), $n = 2000$ impacts, rayon des cratères 0,05, graine 42 : érosion incrémentale à gauche, paquets de $k = 500$ à droite.}
+  \label{fig:erosion-rendu}
+\end{figure}
+
+\paragraph{Par paquets : moins précise, mais plus rapide.} Les $k$ rayons d'un paquet sont lancés sur le même objet, puis leurs cratères sont soustraits ensemble.
+\begin{itemize}
+  \item \emph{Plus rapide.} Les rayons d'un paquet parcourent un arbre qui ne contient pas encore les cratères de ce paquet. De plus, l'arbre final, une chaîne de $n/k$ soustractions d'unions équilibrées, est beaucoup moins profond et donc plus rapide à évaluer. Pour $n = 4000$, la construction est 2 à 4,5~fois plus rapide, et \texttt{Value} 1,8 à 2,5~fois plus rapide (tableau~\ref{tab:erosion-synthese}).
+  \item \emph{Moins précise.} Les rayons d'un même paquet ne voient pas les cratères les uns des autres. Deux projectiles du même paquet qui tombent au même endroit creusent à la même profondeur au lieu de s'empiler. Dans les deux cas, la surface est criblée de cratères (figure~\ref{fig:erosion-rendu}), mais en incrémental les cratères s'empilent et l'érosion va plus profond dans l'objet. Plus $k$ est grand, moins l'objet est érodé en profondeur.
+\end{itemize}
+
+\paragraph{Choix de la taille des paquets.} Augmenter $k$ rend la construction plus rapide, mais l'objet moins fidèle. Le gain sur \texttt{Value} plafonne dès $k \approx 25$ ($\times$2,3 à $\times$2,5), alors que la perte de précision continue d'augmenter avec $k$. Des paquets de quelques dizaines de rayons donnent l'essentiel du gain ($\times$2,4 à $\times$2,7 sur la construction, environ $\times$2,3 sur l'évaluation), en limitant la perte de précision. Les deux méthodes restent quadratiques en $n$ : les paquets divisent le temps, ils ne changent pas la façon dont il augmente avec le nombre d'impacts.
+
 
 \section{Accélération des requêtes}
-\subsection{Principe}
-\todo{Présenter l'objectif de l'accélération, le rôle d'un volume englobant et les conditions sous lesquelles sa distance permet d'éviter l'évaluation du sous-arbre.}
-
 \subsection{Structure et stratégie implémentées}
-\todo{Décrire précisément le nœud ou les structures d'accélération réalisés, leur intégration à l'arbre SDF, ainsi que la façon dont les valeurs sont combinées. Distinguer une accélération effectivement utilisée d'une piste envisagée.}
+Le volume englobant a été implémenté dans la classe \texttt{BoundingBoxSDF}. Il consiste en une approximation du champ que nous considérons suffisante étant donné que nous n'utilisons que des unions dans le cadre du test.
+
+La méthode est simple : on renvoie la distance à la boite plus un $\varepsilon$ en dehors de la boite, sinon on renvoie la distance à notre scène.
 
 \subsection{Résultats}
-\todo{Indiquer les objets, requêtes (\texttt{Value} et/ou intersection) et paramètres de volumes utilisés. Les conditions générales de mesure sont présentées dans l'introduction.}
+Nous avons effectué des tests sur une scène de 500 sphères réparties aléatoirement dans l'espace, toutes contenues dans une boite de demi-taille $0{,}9$.
+
+Pour l'évaluation de la durée de la fonction \texttt{Value}, nous avons utilisé des points générés aléatoirement dans une boite de demi-taille $1$.
+
 \begin{table}[htbp]
   \centering
   \caption{Comparaison des requêtes avec et sans accélération.}
   \label{tab:acceleration}
   \small
-  \begin{tabular}{p{4cm}p{4cm}rr}
+  \begin{tabular}{p{3.2cm}p{3.3cm}rrr}
     \toprule
-    Requête & Variante & \shortstack{Temps\\(ms)} & Gain \\
+    Requête & Variante & \shortstack{\texttt{Value}\\($\mu$s/appel)} & FPS & \shortstack{Temps/frame\\(ms)} \\
     \midrule
-    \texttt{Value} ou intersection & Sans volume englobant & \ldots & --- \\
-    \texttt{Value} ou intersection & Avec volume englobant & \ldots & \ldots \\
+    \texttt{Value} ou intersection & Sans volume englobant & 16,66 & 29,9 & 33,6 \\
+    \texttt{Value} ou intersection & Avec volume englobant & 12,2 & 101,3 & 9,88 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\todo{Interpréter les résultats et préciser quand le test du volume englobant compense son coût.}
+Comme on peut le voir, les résultats montrent une nette amélioration avec l'utilisation de la \texttt{BoundingBox}.
+Etant donné que le volume occupé par notre boite est d'environ 73\% du volume dans lequel sont générés nos points, une diminution 
+du temps d'évaluation de 16 à 12 revient à une diminution d'environ 27\%, ce qui est cohérent avec la différence de volume.
+Ce qui revient à dire que 27\% des points ont subi une amélioration proche de 100\%, autrement dit, l'évaluation de la fonction
+ne coûte presque rien pour ces points.
 
-\section{Aplatissement de l'arbre en code GLSL}
-\todo{Décrire le parcours de l'arbre et la génération de code GLSL : informations transmises pour les primitives et les opérateurs, ordre des enfants et traitement des opérateurs non commutatifs. Expliquer comment le champ généré est évalué dans le shader.}
+\section{Rendu par lancer de rayon}
+\subsection{Sphere Tracing}
+La pipeline de rendu par sphère tracing est défini dans le fichier \filename{sphere\_tracing.cpp}. Le fonctionnement est simple on construit un triangle occupant toute la caméra auquel on applique un shader utilisant du sphère tracinge.
+Le triangle agit comme un écran. L'algorithme de sphère tracing est défini dans le fichier \filename{assets/SphereTracing.frag}, les primitive et operateurs de SDF sont définis en GLSL dans le fichier \filename{SDF\_utils}.
 
-\todo{Donner un exemple court reliant un arbre SDF à son code GLSL. Préciser les limites de taille, de profondeur ou de pile rencontrées et présenter le rendu obtenu par sphere tracing.}
+L'algorithme de sphere tracing est le même que défini précédemment. On lance un rayon puis on fait des sauts de distance/lambda (la borne lipschitzienne) jusqu'a être trop loin ou trop proche de la surface. Ici on considère que lambda est toujours égale à 1 car on n'utilise pas de domaine warping.
 
-\begin{lstlisting}[language=C++,caption={Exemple à compléter : construction d'un arbre puis génération de sa représentation GPU.},label={lst:glsl-generation}]
-// Remplacer par un extrait representatif du projet.
+Pour dessiner la scene on utilise une distance maximale à partir de laquelle les rayons s'arretent. On utilise également un epsilon pour savoir si on est suffisemment proche d'une surface pour l'afficher sur ce pixel. 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Pictures/BlendExemple.png}
+  \caption{Exemple de rendu sphere tracing de deux sphères et d'un cube combinés par des blends lisses.}
+  \label{fig:blend-sphere-tracing}
+\end{figure}
+
+Le rendu présente un problème au niveau des bordures des objets : l'aliasing. Cet effet est causé par le fait que l'on envoie qu'un seul rayon par pixel ce qui cause ces bordures nets et "pixelisées".On pourrait être résoudre ce problème avec une méthode d'antialiasing simple comme ajouter une proportion de la moyenne des pixels voisin.
+\subsection{Applatissement de l'abre}
+Pour utilisé un arbre de construiction défini en C++ avec cette pipeline, on utilise une méthode pour convertir l'arbre directement en code GLSL avant de le compiler en même temps que le shader. 
+Chaque classe qui hérite de NodeSDF surcharge la méthode "ToGLSL". Cette méthode renvoie une chaine de caractères qui correspond à l'appel de value GLSL équivalent pour cette prmitive. Cette fonction assemble de manière récursive la méthode Value finale.
+
+Cette méthode a l'avan,tage d'être simple mais elle empeche la modification de l'arbre en temps réel car il faudrait recompilé le shader généré à chaque frame.
+\begin{lstlisting}[language=C++,caption={Code GLSL généré pour l'arbre de blend présenté à la figure~\ref{fig:blend-sphere-tracing}.},label={lst:glsl-generation}]
+blend_op(
+    blend_op(
+        sphere_SDF(p, vec3(-1.600000, 1.000000, 0.000000), 0.750000),
+        box_SDF(p, vec3(0.000000, 0.000000, 0.000000),
+                vec3(0.650000, 0.650000, 0.650000),
+                vec3(0.000000, 1.000000, 0.000000)),
+        0.300000),
+    sphere_SDF(p, vec3(1.600000, -1.000000, 0.000000), 0.750000),
+    0.300000)
 \end{lstlisting}
 
 \appendix
 \section{Code source}
-\todo{Ajouter le lien vers l'archive du code demandé dans le sujet, ainsi que toute information utile pour accéder à la version évaluée.}
+Le code source du projet est disponible sur GitHub : \url{https://github.com/egoia/SDFs}.
 
 \end{document}
