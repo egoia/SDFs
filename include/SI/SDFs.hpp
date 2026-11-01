@@ -163,3 +163,14 @@ public:
   NoiseSDF( std::unique_ptr<NodeSDF>& primitive, float amplitude, float frequency);
   double Value(const Vector&) const override;
 };
+
+class BoundingBoxSDF : public NodeSDF
+{
+  private : 
+    std::unique_ptr<BoxSDF> box;
+    std::unique_ptr<NodeSDF> tree;
+
+  public:
+  BoundingBoxSDF(std::unique_ptr<NodeSDF>& tree, std::unique_ptr<BoxSDF>& box);
+  double Value(const Vector&) const override;
+};

@@ -1,11 +1,65 @@
 
 
-
 //* PRIMITIVES
+
 
 float sphere_SDF(vec3 p, vec3 centre, float radius)
 {
     return length(p-centre)-radius;
+}
+
+// Construit une base orthonormale right/up/forward a partir du vecteur up.
+mat3 orthonormal_basis(vec3 up)
+{
+    if (dot(up, up) < 1e-20)
+        return mat3(1.0);
+
+    up = normalize(up);
+    vec3 reference;
+    vec3 abs_up = abs(up);
+    if (abs_up.x <= abs_up.y && abs_up.x <= abs_up.z)
+        reference = vec3(1.0, 0.0, 0.0);
+    else if (abs_up.y <= abs_up.z)
+        reference = vec3(0.0, 1.0, 0.0);
+    else
+        reference = vec3(0.0, 0.0, 1.0);
+
+    vec3 right = normalize(cross(reference, up));
+    vec3 forward = cross(right, up);
+    return mat3(right, up, forward);
+}
+
+float box_SDF(vec3 p, vec3 center, vec3 size, vec3 up){
+    vec3 p_relatif = p - center;
+
+    mat3 basis = orthonormal_basis(up);
+    vec3 p_local = vec3(
+        dot(p_relatif, basis[0]),
+        dot(p_relatif, basis[1]),
+        dot(p_relatif, basis[2])
+    );
+    vec3 q = abs(p_local) - size;
+
+    float outside_dist = length(max(q, vec3(0.0)));
+    float inside_dist = min(max(q.x, max(q.y, q.z)), 0.0);
+    return outside_dist + inside_dist;
+}
+
+float cylinder_SDF(vec3 p, vec3 A, vec3 B, float radius)
+{
+    vec3 AB = B - A;
+    vec3 AP = p - A;
+    float pv = dot(AP, normalize(AB));
+    float pu = sqrt(max(0.0, dot(AP, AP) - pv * pv));
+
+    float h = length(AB);
+    float qu = pu - radius;
+    float qv = max(pv - h, -pv);
+    vec3 q = vec3(qu, qv, 0.0);
+
+    float outside_dist = length(max(q, vec3(0.0)));
+    float inside_dist = min(0.0, max(q.x, q.y));
+    return outside_dist + inside_dist;
 }
 
 // segment [a,b] avec une epaisseur (capsule), radius = 0 pour un segment "pur"
@@ -14,6 +68,29 @@ float segment_SDF(vec3 p, vec3 a, vec3 b, float radius)
     vec3 pa = p-a, ba = b-a;
     float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
     return length( pa - ba*h ) - radius;
+}
+
+float cone_SDF(vec3 p, vec3 A, vec3 B, float radius)
+{
+    vec3 AB = B - A;
+    vec3 AP = p - A;
+    float pv = dot(AP, normalize(AB));
+    float pu = sqrt(max(0.0, dot(AP, AP) - pv * pv));
+
+    vec3 q = vec3(pu, pv, 0.0);
+
+    float h = length(AB);
+
+    vec3 Aprime = vec3(0.0, 0.0, 0.0);
+    vec3 Bprime = vec3(0.0, h, 0.0);
+    vec3 u = vec3(1.0, 0.0, 0.0);
+    float distanceToSide = segment_SDF(q, Bprime, u * radius, 0.0);
+    float distanceToBase = segment_SDF(q, Aprime, u * radius, 0.0);
+    float distance = min(distanceToSide, distanceToBase);
+
+    bool isInside = (pv > 0.0) && (pu < mix(radius, 0.0, clamp(pv / h, 0.0, 1.0)));
+    
+    return isInside ? -distance : distance;
 }
 
 // plan de normale n et de hauteur h le long de n (n doit etre normalise)

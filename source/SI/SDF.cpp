@@ -5,7 +5,7 @@
 #include <algorithm>
 
 NodeSDF::NodeSDF() = default;
-
+//* ====== SPHERE ======
 SphereSDF::SphereSDF(const Vector& center, const float radius)
   : center(center), radius(radius)
 {
@@ -16,6 +16,8 @@ double SphereSDF::Value(const Vector& p) const
   return Norm(center - p) - radius;
 }
 
+
+//* ====== BOX ======
 BoxSDF::BoxSDF(const Vector& center, const Vector size, const Vector& up)
   : center(center), size(size), up(up)
 {
@@ -37,6 +39,8 @@ double BoxSDF::Value(const Vector& p) const
     return outside_dist + inside_dist;
 }
 
+
+//* ====== CYLINDRE ======
 CylindreSDF::CylindreSDF(const Vector& A, const Vector& B, const float radius)
   : B(B), A(A), radius(radius)
 {
@@ -59,19 +63,27 @@ double CylindreSDF::Value(const Vector& p) const
   return outside_dist + inside_dist;
 }
 
+
+//* ====== CAPSULE ======
 CapsuleSDF::CapsuleSDF(const Vector& A, const Vector& B, const float threyshold)
   : B(B), A(A), threyshold(threyshold)
 {
 }
 
-double CapsuleSDF::Value(const Vector& p) const //from inigo quilez
-{
+double distanceSegment(const Vector& A, const Vector& B, const Vector& p ){
   Vector AP = p-A;
   Vector AB = B-A;
   double h = Math::Clamp((AP * AB) / (AB * AB), 0.0, 1.0);
-  return Norm(AP - AB*h) - threyshold;
+  return Norm(AP - AB*h);
 }
 
+double CapsuleSDF::Value(const Vector& p) const //from inigo quilez
+{
+  return distanceSegment(A,B,p) - threyshold;
+}
+
+
+//* ====== PLANE ======
 PlaneSDF::PlaneSDF(const Vector& center, const Vector& normal)
   : center(center), normal(normal)
 {
@@ -82,6 +94,8 @@ double PlaneSDF::Value(const Vector& p) const
   return (p-center) * Normalized(normal);
 }
 
+
+//* ====== CONE ======
 ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
   : B(B), A(A), radius(radius)
 {
@@ -89,25 +103,29 @@ ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
 
 double ConeSDF::Value(const Vector& p) const
 {
-  /*
   Vector AB = B-A;
   Vector AP = p-A;
   float pv = AP * Normalized(AB);
   float pu = std::sqrt(Norm(AP) * Norm(AP) - pv * pv);
 
+  Vector q = Vector(pu,pv,0.0);
+
   float h = Norm(AB);
 
-  float radius_value = std::lerp(radius, 0.0f, std::clamp(pv/h, 0.0f, 1.0f));
-  float qu = pu - radius_value;
-  float qv = Math::Max(pv - h, -pv);
-  Vector q = Vector(qu,qv,0.0);
+  Vector Aprime = Vector(0.0,0.0,0.0);
+  Vector Bprime = Vector(0.0,h,0.0);
+  Vector u = Vector(1.0,0.0,0.0);
+  float distanceToSide = distanceSegment(Bprime, u * radius, q);
+  float distanceToBase = distanceSegment(Aprime, u*radius, q);
+  float distance = std::min(distanceToBase, distanceToSide);
 
-  float outside_dist = Norm(Vector::Max(q,Vector()));
-  float inside_dist = Math::Min(0.0,Math::Max(q[0], q[1]));
-  return outside_dist + inside_dist;*/
-  return 0.0;
+  bool isInside = (pv > 0.0f) && (pu<std::lerp(radius, 0.0f, std::clamp(pv/h, 0.0f, 1.0f)));
+
+  return isInside ? -distance : distance;
 }
 
+
+//* ====== DONUT ======
 DonutSDF::DonutSDF(const Vector& center, const float R, const float r, const Vector& up)
   : center(center), up(Normalized(up)), R(R), r(r)
 {
@@ -124,6 +142,8 @@ double DonutSDF::Value(const Vector& p) const //from inigo quilez
   return std::sqrt(qx*qx + h*h) - r;
 }
 
+
+//* ====== UNION ======
 UnionSDF::UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right) : left(std::move(left)), right(std::move(right))
 {
 }
@@ -137,6 +157,8 @@ double UnionSDF::Value(const Vector& p) const
   return Math::Min(left->Value(p), right->Value(p));
 }
 
+
+//* ====== INTERSECTION ======
 IntersectionSDF::IntersectionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right) : left(std::move(left)), right(std::move(right))
 {
 }
@@ -150,6 +172,8 @@ double IntersectionSDF::Value(const Vector& p) const
   return Math::Max(left->Value(p), right->Value(p));
 }
 
+
+//* ====== BLEND ======
 BlendSDF::BlendSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right, float k) : left(std::move(left)), right(std::move(right)), k(k)
 {
 }
@@ -167,6 +191,8 @@ double BlendSDF::Value(const Vector& p) const //from inigo quilez
   return std::min(a,b) - h*h*0.25/k4;
 }
 
+
+//* ====== SUBSTRACTION ======
 SubstractionSDF::SubstractionSDF( std::unique_ptr<NodeSDF>& minuend,  std::unique_ptr<NodeSDF>& subtrahend) : minuend(std::move(minuend)), subtrahend(std::move(subtrahend))
 {
 }
@@ -176,6 +202,8 @@ double SubstractionSDF::Value(const Vector& p) const
   return Math::Max(minuend->Value(p), -subtrahend->Value(p));
 }
 
+
+//* ====== DOMAIN REPETITION ======
 GridDomainRepetionSDF::GridDomainRepetionSDF(std::unique_ptr<NodeSDF>& primitive, const Vector& period)
   : primitive(std::move(primitive)), period(period)
 {
@@ -183,12 +211,14 @@ GridDomainRepetionSDF::GridDomainRepetionSDF(std::unique_ptr<NodeSDF>& primitive
 
 double GridDomainRepetionSDF::Value(const Vector& p) const 
 {
-  Vector q = p;
+  Vector q = Vector(p);
   for (int i = 0; i < 3; i++)
     q[i] -= period[i] * std::round(p[i] / period[i]);
   return primitive->Value(q);
 }
 
+
+//* ====== TWIST ======
 TwistSDF::TwistSDF(std::unique_ptr<NodeSDF>& primitive, float k)
   : primitive(std::move(primitive)), k(k)
 {
@@ -202,6 +232,8 @@ double TwistSDF::Value(const Vector& p) const
   return primitive->Value(q);
 }
 
+
+//* ====== NOISE ======
 NoiseSDF::NoiseSDF(std::unique_ptr<NodeSDF>& primitive, float amplitude, float frequency)
   : primitive(std::move(primitive)), amplitude(amplitude), frequency(frequency)
 {
@@ -240,6 +272,8 @@ double NoiseSDF::Value(const Vector& p) const
   return primitive->Value(p) + amplitude * Noise(p * frequency);
 }
 
+
+//* ====== SPHERE TRACING  ======
 bool NodeSDF::Intersect(const Ray& ray, double& t, double tMax, double eps, int maxSteps) const
 {
   t = 0.0;
@@ -253,4 +287,19 @@ bool NodeSDF::Intersect(const Ray& ray, double& t, double tMax, double eps, int 
     if (t>tMax) return false;
   }
   return false;
+}
+
+
+//* ====== BOUNDING BOX ======
+BoundingBoxSDF::BoundingBoxSDF( std::unique_ptr<NodeSDF>& tree,  std::unique_ptr<BoxSDF>& box) : tree(std::move(tree)), box(std::move(box))
+{
+}
+
+const double EPSILON = 0.00000001;
+
+double BoundingBoxSDF::Value(const Vector& p) const
+{
+  double b = box->Value(p);
+  if(b - EPSILON > 0) return b - EPSILON;
+  else return tree->Value(p);
 }
