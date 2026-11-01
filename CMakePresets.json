@@ -46,7 +46,7 @@
     {
       "name": "erosion-benchmark",
       "configurePreset": "erosion-benchmark",
-      "targets": ["erosion-benchmark", "erosion-viewer"]
+      "targets": ["erosion-benchmark"]
     }
   ]
 }

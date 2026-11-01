@@ -8,6 +8,8 @@
 #include "orbit_camera.hpp"
 #include "program.hpp"
 #include "implicits.h"
+#include "SI/SDFs.hpp"
+#include "SI/erosion.hpp"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -81,28 +83,46 @@ int main(int argc, char* argv[]) {
 
 
     //Camera
-    GLfloat camera_target_dist = 3.0f;
+    GLfloat camera_target_dist = 4.0f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT,0.3f);
 
-    // Polygonise le champ implicite dans une boite qui contient entierement la sphere.
-    // Le meme appel fonctionnera avec de futurs champs derives qui redefinissent Value().
-    AnalyticScalarField field;
-    Mesh mesh;
-    field.Polygonize(64, mesh, Box(Vector(-1.25), Vector(1.25)));
+    // Comparaison des erosions dans la configuration ou leur ecart de forme est le plus grand
+    // (2000 impacts, paquets de 500) : incremental a gauche, par paquets a droite.
+    // Chaque boite est erodee autour de son propre centre avec la meme graine,
+    // les impacts tombent donc aux memes endroits relatifs sur les deux boites.
+    const int nbImpacts = 2000;
+    const int batchSize = 500;
+    const Vector leftCenter(-0.8, 0.0, 0.0);
+    const Vector rightCenter(0.8, 0.0, 0.0);
+
+    std::unique_ptr<NodeSDF> incremental = ErodeIncremental(
+        std::make_unique<BoxSDF>(leftCenter, Vector(0.5), Vector(0.0, 1.0, 0.0)),
+        nbImpacts, 0.05, leftCenter, 1.5, 42);
+    std::unique_ptr<NodeSDF> batch = ErodeBatch(
+        std::make_unique<BoxSDF>(rightCenter, Vector(0.5), Vector(0.0, 1.0, 0.0)),
+        nbImpacts, batchSize, 0.05, rightCenter, 1.5, 42);
+
+    // Un maillage par objet, chacun dans sa boite englobante (une cellule ~0.014 < rayon des crateres).
+    // A lancer en Release : la polygonisation prend quelques secondes.
+    std::cout << "Polygonisation des deux objets erodes...\n";
+    Mesh incrementalMesh, batchMesh;
+    incremental->Polygonize(100, incrementalMesh, Box(leftCenter - Vector(0.7), leftCenter + Vector(0.7)));
+    batch->Polygonize(100, batchMesh, Box(rightCenter - Vector(0.7), rightCenter + Vector(0.7)));
 
     // Aplatit les triangles en sommets position/normale, format directement consomme par OpenGL.
     std::vector<GLfloat> meshVertices;
-    meshVertices.reserve(mesh.Triangles() * 3 * 6);
-    for (int triangle = 0; triangle < mesh.Triangles(); ++triangle) {
-        for (int corner = 0; corner < 3; ++corner) {
-            const Vector position = mesh.Vertex(triangle, corner);
-            const Vector normal = mesh.Normal(mesh.NormalIndex(triangle, corner));
-            for (int component = 0; component < 3; ++component) {
-                meshVertices.push_back(static_cast<GLfloat>(position[component]));
-            }
-            for (int component = 0; component < 3; ++component) {
-                meshVertices.push_back(static_cast<GLfloat>(normal[component]));
+    for (const Mesh* mesh : { &incrementalMesh, &batchMesh }) {
+        for (int triangle = 0; triangle < mesh->Triangles(); ++triangle) {
+            for (int corner = 0; corner < 3; ++corner) {
+                const Vector position = mesh->Vertex(triangle, corner);
+                const Vector normal = mesh->Normal(mesh->NormalIndex(triangle, corner));
+                for (int component = 0; component < 3; ++component) {
+                    meshVertices.push_back(static_cast<GLfloat>(position[component]));
+                }
+                for (int component = 0; component < 3; ++component) {
+                    meshVertices.push_back(static_cast<GLfloat>(normal[component]));
+                }
             }
         }
     }

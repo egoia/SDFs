@@ -24,7 +24,6 @@ list(REMOVE_ITEM COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/sphere_tracing.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/ray_marching.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/erosion_benchmark.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/erosion_viewer.cpp"
 )
 list(APPEND COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/glad/src/glad.c"
@@ -54,4 +53,3 @@ endfunction()
 add_sdf_app(marching-cube source/marching_cube.cpp)
 add_sdf_app(sphere-tracing source/sphere_tracing.cpp)
 add_sdf_app(erosion-benchmark source/erosion_benchmark.cpp)
-add_sdf_app(erosion-viewer source/erosion_viewer.cpp)
