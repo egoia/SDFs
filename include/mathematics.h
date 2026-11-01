@@ -159,6 +159,7 @@ public:
   Vector Inverse() const;
 
   friend std::ostream& operator<<(std::ostream&, const Vector&);
+  std::string ToGLSL() const; 
 
 public:
   static const Vector Null; //!< Null vector.
@@ -453,4 +454,9 @@ The values are given in trigonometric order.
 inline Vector Vector::Bilinear(const Vector& a00, const Vector& a10, const Vector& a11, const Vector& a01, double u, double v)
 {
   return (1 - u) * (1 - v) * a00 + (1 - u) * (v)*a01 + (u) * (1 - v) * a10 + (u) * (v)*a11;
+}
+
+
+inline std::string Vector::ToGLSL() const{
+  return "vec3(" + std::to_string(c[0]) +", "+ std::to_string(c[1]) +", "+ std::to_string(c[2])+")";
 }

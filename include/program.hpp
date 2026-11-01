@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include "SI/SDFs.hpp"
 
 class Program{
     public : 
@@ -12,6 +13,7 @@ class Program{
         
         Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath, const std::vector<std::string>& dependancies);
         Program(const std::string& shaderPath, const std::vector<std::string>& dependancies);
+        Program(const std::string& vertexShaderPath, const std::string& fragmentShaderPath, const std::vector<std::string>& dependancies, const NodeSDF& scene);
 
         void use(); 
     private : 

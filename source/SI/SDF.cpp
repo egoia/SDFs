@@ -5,9 +5,19 @@
 
 NodeSDF::NodeSDF() = default;
 
+std::string NodeSDF::ToGLSL() const
+{
+  return {};
+}
+
 SphereSDF::SphereSDF(const Vector& center, const float radius)
   : center(center), radius(radius)
 {
+}
+
+std::string SphereSDF::ToGLSL() const
+{
+  return "sphere_SDF(p, " + center.ToGLSL() + ", " + std::to_string(radius) +")";
 }
 
 double SphereSDF::Value(const Vector& p) const
@@ -18,6 +28,11 @@ double SphereSDF::Value(const Vector& p) const
 BoxSDF::BoxSDF(const Vector& center, const Vector size, const Vector& up)
   : center(center), size(size), up(up)
 {
+}
+
+std::string BoxSDF::ToGLSL() const
+{
+  return "box_SDF(p, " + center.ToGLSL() + ", " + size.ToGLSL() + ", "+ up.ToGLSL() +")";;
 }
 
 double BoxSDF::Value(const Vector& p) const
@@ -39,6 +54,11 @@ double BoxSDF::Value(const Vector& p) const
 CylindreSDF::CylindreSDF(const Vector& A, const Vector& B, const float radius)
   : B(B), A(A), radius(radius)
 {
+}
+
+std::string CylindreSDF::ToGLSL() const
+{
+  return "cylindre_SDF(p, " + A.ToGLSL() + ", " + B.ToGLSL() + ", " + std::to_string(radius) +")";
 }
 
 double CylindreSDF::Value(const Vector& p) const
@@ -63,6 +83,11 @@ CapsuleSDF::CapsuleSDF(const Vector& A, const Vector& B, const float threyshold)
 {
 }
 
+std::string CapsuleSDF::ToGLSL() const
+{
+  return {};
+}
+
 double CapsuleSDF::Value(const Vector&) const
 {
   return 0.0;
@@ -73,6 +98,11 @@ PlaneSDF::PlaneSDF(const Vector& center, const Vector& normal)
 {
 }
 
+std::string PlaneSDF::ToGLSL() const
+{
+  return {};
+}
+
 double PlaneSDF::Value(const Vector&) const
 {
   return 0.0;
@@ -81,6 +111,11 @@ double PlaneSDF::Value(const Vector&) const
 ConeSDF::ConeSDF(const Vector& A, const Vector& B, const float radius)
   : B(B), A(A), radius(radius)
 {
+}
+
+std::string ConeSDF::ToGLSL() const
+{
+  return {};
 }
 
 double ConeSDF::Value(const Vector& p) const
@@ -106,6 +141,11 @@ double ConeSDF::Value(const Vector& p) const
 
 DonutSDF::DonutSDF() = default;
 
+std::string DonutSDF::ToGLSL() const
+{
+  return {};
+}
+
 double DonutSDF::Value(const Vector&) const
 {
   return 0.0;
@@ -117,6 +157,11 @@ UnionSDF::UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& r
 
 UnionSDF::UnionSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
+}
+
+std::string UnionSDF::ToGLSL() const
+{
+  return "union_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
 }
 
 double UnionSDF::Value(const Vector& p) const
@@ -132,6 +177,11 @@ IntersectionSDF::IntersectionSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
 }
 
+std::string IntersectionSDF::ToGLSL() const
+{
+  return "intersection_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
+}
+
 double IntersectionSDF::Value(const Vector& p) const
 {
   return Math::Max(left->Value(p), right->Value(p));
@@ -143,6 +193,11 @@ BlendSDF::BlendSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& r
 
 BlendSDF::BlendSDF(const std::vector<std::unique_ptr<NodeSDF>>&)
 {
+}
+
+std::string BlendSDF::ToGLSL() const
+{
+  return  "blend_SDF(p, " + left->ToGLSL() + ", " + right->ToGLSL() +")";
 }
 
 double BlendSDF::Value(const Vector& p) const //from inigo quilez
@@ -158,6 +213,11 @@ SubstractionSDF::SubstractionSDF( std::unique_ptr<NodeSDF>& minuend,  std::uniqu
 {
 }
 
+std::string SubstractionSDF::ToGLSL() const
+{
+  return "substraction_SDF(p, " + minuend->ToGLSL() + ", " + subtrahend->ToGLSL() +")";
+}
+
 double SubstractionSDF::Value(const Vector& p) const
 {
   return Math::Max(minuend->Value(p), -subtrahend->Value(p));
@@ -166,6 +226,11 @@ double SubstractionSDF::Value(const Vector& p) const
 GridDomainRepetionSDF::GridDomainRepetionSDF(std::unique_ptr<NodeSDF>& primitive, const Vector& period)
   : primitive(std::move(primitive)), period(period)
 {
+}
+
+std::string GridDomainRepetionSDF::ToGLSL() const
+{
+  return {};
 }
 
 double GridDomainRepetionSDF::Value(const Vector&) const

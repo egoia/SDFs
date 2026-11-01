@@ -12,7 +12,7 @@ const float MAX_DISTANCE = 100;
 const  float AMBIANT_LIGHT = 0.2;
 const vec3 light_dir = normalize(vec3(0,-1,-1));
 
-float sphere_radius = 0.50;
+/*float sphere_radius = 0.50;
 vec3 sphere_centre = vec3(0.5);
 
 float sphere_radius2 = 0.50;
@@ -21,7 +21,9 @@ vec3 sphere_centre2 = vec3(-0.5);
 float value(vec3 p)
 {
     return smooth_union_op(sphere_SDF(p,sphere_centre,sphere_radius), sphere_SDF(p, sphere_centre2, sphere_radius2), 0.4);
-}
+}*/
+
+float value(vec3 p); 
 
 vec3 gradient(vec3 p){
     return vec3(

@@ -10,6 +10,7 @@ class NodeSDF : public AnalyticScalarField
 {
 public:
   NodeSDF();
+  virtual std::string ToGLSL() const;
 };
 
 class SphereSDF : public NodeSDF
@@ -20,6 +21,7 @@ private:
 public:
   SphereSDF(const Vector& center, const float radius);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class BoxSDF : public NodeSDF
@@ -31,6 +33,7 @@ private:
 public:
   BoxSDF(const Vector& center, const Vector size, const Vector& up);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class CylindreSDF : public NodeSDF
@@ -42,6 +45,7 @@ private:
 public:
   CylindreSDF(const Vector& A, const Vector& B, const float radius);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class CapsuleSDF : public NodeSDF //SEGMENT
@@ -53,6 +57,7 @@ private:
 public:
   CapsuleSDF(const Vector& A, const Vector& B, const float threyshold);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class PlaneSDF : public NodeSDF
@@ -63,6 +68,7 @@ private:
 public:
   PlaneSDF(const Vector& center, const Vector& normal);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class ConeSDF : public NodeSDF
@@ -74,6 +80,7 @@ private:
 public:
   ConeSDF(const Vector& A, const Vector& B, const float radius);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class DonutSDF : public NodeSDF
@@ -81,6 +88,7 @@ class DonutSDF : public NodeSDF
 public:
   DonutSDF();
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class UnionSDF : public NodeSDF
@@ -91,6 +99,7 @@ public:
   UnionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right);
   UnionSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create a union tree of all primitives
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class IntersectionSDF : public NodeSDF
@@ -101,6 +110,7 @@ public:
   IntersectionSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right);
   IntersectionSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create an intersection tree of all primitives
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class BlendSDF : public NodeSDF
@@ -112,6 +122,7 @@ public:
   BlendSDF( std::unique_ptr<NodeSDF>& left,  std::unique_ptr<NodeSDF>& right, float k);
   BlendSDF(const std::vector<std::unique_ptr<NodeSDF>>& primitives); //TODO should create a blend tree of all primitives
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class SubstractionSDF : public NodeSDF
@@ -121,6 +132,7 @@ private :
 public:
   SubstractionSDF( std::unique_ptr<NodeSDF>& minuend,  std::unique_ptr<NodeSDF>& subtrahend);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
 
 class GridDomainRepetionSDF : public NodeSDF
@@ -131,6 +143,6 @@ private :
 public:
   GridDomainRepetionSDF( std::unique_ptr<NodeSDF>& primitive, const Vector& period);
   double Value(const Vector&) const override;
+  std::string ToGLSL() const override;
 };
-
 
