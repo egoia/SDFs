@@ -100,11 +100,15 @@
 
 \maketitle
 \tableofcontents
+\clearpage
 
 \section{Introduction}
 \subsection{Objectifs et réalisations}
 Pour ce devoir nous avons abordé trois des quatre sujets : la modélisation de Signed Distance Field, l'algorithme d'érosion ainsi que le volume englobant. En plus de ces trois sujets nous avons mis en place une méthode de visualisation supplémentaire à celle fournie utilisant le marching cube. Nous avons développé une visualisation en temps réel via lancer de rayon et sphère tracing.
 Ce supplément est décrit dans sa partie ainsi que l'aplatissement des arbres en GLSL.
+
+\subsection{Environnement}
+Le projet a été réalisé et testé sous Linux en C++, avec OpenGL pour la visualisation. Le projet reprend le code de marching cube fourni. Pour plus de précision sur l'installation et la compilation référez vous au README.MD du projet.
 
 \subsection{Mesures de performances}
 Pour mesurer les performances nous avons pris la mesure de la durée des appels aux fonctions Value et Intersect et nous nous sommes également basés sur les images par seconde ainsi que le temps de calcul d'une image.
@@ -404,5 +408,9 @@ blend_op(
 \appendix
 \section{Code source}
 Le code source du projet est disponible sur GitHub : \url{https://github.com/egoia/SDFs}.
+
+\section{Aide et ressources}
+Le projet a été réalisé par Elyas Saidoune et Leon Lepers. Certaines fonctions telles que la SDF du Tore ou encore la fonction de blend ont été récupérés sur le site de Inigo Qilez (\url{https://iquilezles.org/articles/distfunctions/}).
+L'IA générative a été utilisée de manière raisonnable pour générer des tests et des scenes intéressantes.
 
 \end{document}
