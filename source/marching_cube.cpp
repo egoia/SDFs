@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "orbit_camera.hpp"
+#include "SI/scene_builder.hpp"
 #include "program.hpp"
 #include "implicits.h"
 
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
 
     if (!window) {
         std::cerr << "Erreur SDL_CreateWindow: " << SDL_GetError() << '\n';
-        SDL_Quit();
+        SDL_Quit(); 
         return -1;
     }
     SDL_AddEventWatch(on_resize_window_callback, NULL);
@@ -70,8 +71,8 @@ int main(int argc, char* argv[]) {
 
     glViewport(0, 0, WIDTH, HEIGHT);
 
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClearDepthf(1.0f);
+    glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+    glClearDepth(1.0);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -81,15 +82,14 @@ int main(int argc, char* argv[]) {
 
 
     //Camera
-    GLfloat camera_target_dist = 3.0f;
+    GLfloat camera_target_dist = 24.0f;
     glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
     OrbitCamera cam(camera_target, camera_target_dist, 45.0f, 0.1f, 1000.0f, WIDTH, HEIGHT,0.3f);
 
-    // Polygonise le champ implicite dans une boite qui contient entierement la sphere.
-    // Le meme appel fonctionnera avec de futurs champs derives qui redefinissent Value().
-    AnalyticScalarField field;
+    // La scene de demonstration s'etend approximativement de x=-10 a x=10.
+    std::unique_ptr<NodeSDF> scene = SDFScenes::BuildDemoScene();
     Mesh mesh;
-    field.Polygonize(64, mesh, Box(Vector(-1.25), Vector(1.25)));
+    scene->Polygonize(128, mesh, Box(Vector(-10.0, -3.0, -1.0), Vector(10.0, 3.0, 1.0)));
 
     // Aplatit les triangles en sommets position/normale, format directement consomme par OpenGL.
     std::vector<GLfloat> meshVertices;
